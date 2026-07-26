@@ -99,7 +99,9 @@ class HabitRepository(private val dao: HabitDao) {
         )
         dao.updateHabit(updatedHabit)
         FirebaseSync.uidOrNull?.let { FirebaseSync.pushHabit(it, updatedHabit) }
-        RewardWallet.earn(if (newStreak > 0 && newStreak % 7 == 0) 25 else 10)
+        // Ten verified check-ins earn one Recovery Pass. The wallet stores
+        // tenths internally for backward-compatible migration from Loop Coins.
+        RewardWallet.earn(10)
 
         return if (usedFreeze) CompletionResult.CompletedWithFreeze(newStreak) else CompletionResult.Completed(newStreak)
     }

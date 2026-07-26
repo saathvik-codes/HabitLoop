@@ -1,5 +1,12 @@
 package com.habitloop.app.ui
 
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,13 +65,19 @@ fun SettingsScreen(
     onOpenNotifications: () -> Unit
 ) {
     val context = LocalContext.current
+    var systemNotificationsEnabled by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        systemNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
     var hour by remember { mutableIntStateOf(ReminderPrefs.getHour(context)) }
     var minute by remember { mutableIntStateOf(ReminderPrefs.getMinute(context)) }
     var saved by remember { mutableIntStateOf(0) }
     var themeMusic by remember { mutableStateOf(ThemeMusicPrefs.enabled(context)) }
     var showTimePicker by remember { mutableStateOf(false) }
     var circleAlerts by remember { mutableStateOf(NotificationPrefs.circleMessages(context)) }
-    var jamAlerts by remember { mutableStateOf(NotificationPrefs.jamUpdates(context)) }
+    var habitAlerts by remember { mutableStateOf(NotificationPrefs.habitReminders(context)) }
     var streakAlerts by remember { mutableStateOf(NotificationPrefs.streakNudges(context)) }
     var quietHours by remember { mutableStateOf(NotificationPrefs.quietHours(context)) }
     var showHabitNames by remember { mutableStateOf(NotificationPrefs.showHabitNames(context)) }
@@ -156,11 +169,13 @@ fun SettingsScreen(
                 Column(Modifier.padding(18.dp)) {
                     Text("Notification controls", style = MaterialTheme.typography.titleLarge)
                     Text("Choose what deserves your attention.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    NotificationToggle("Daily habit reminder", "Sent around your chosen time only when scheduled habits remain", habitAlerts) {
+                        habitAlerts = it
+                        saveNotificationSetting("habits", it)
+                        if (it) ReminderScheduler.scheduleDailyReminder(context, hour, minute, replaceExisting = true)
+                    }
                     NotificationToggle("Circle messages", "Updates from circles you joined", circleAlerts) {
                         circleAlerts = it; saveNotificationSetting("circles", it)
-                    }
-                    NotificationToggle("Community Jams", "Starts and invitations", jamAlerts) {
-                        jamAlerts = it; saveNotificationSetting("jams", it)
                     }
                     NotificationToggle("Streak and comeback nudges", "Useful progress notices only", streakAlerts) {
                         streakAlerts = it; saveNotificationSetting("streaks", it)
@@ -217,6 +232,30 @@ fun SettingsScreen(
                         )
                     }
                 }
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (systemNotificationsEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (systemNotificationsEnabled) "System notifications are enabled" else "System notifications are blocked",
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        if (!systemNotificationsEnabled) {
+                            Button(onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                    })
+                                }
+                            }) { Text("Enable") }
+                        }
+                    }
+                }
 
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
@@ -230,7 +269,7 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Text("Tap to open clock", style = MaterialTheme.typography.bodySmall)
+                        Text("Tap to choose a time · Android may deliver it a little later to save battery", style = MaterialTheme.typography.bodySmall)
                     }
                 }
 

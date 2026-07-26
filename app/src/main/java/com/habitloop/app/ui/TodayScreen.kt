@@ -104,7 +104,7 @@ fun TodayScreen(
                 Column {
                     Text("Confirm only after doing the activity. HabitLoop records an honest check-in—not just a button tap.")
                     Text(
-                        "This will update today’s progress, streak and add 10 Loop Coins.",
+                        "This will update today’s progress and count toward your next Recovery Pass.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)

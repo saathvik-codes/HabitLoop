@@ -258,7 +258,7 @@ fun AppRoot(
                     onRedeemCoins = { habitId ->
                         if (com.habitloop.app.data.RewardWallet.spend(com.habitloop.app.data.RewardWallet.FREEZE_COST)) {
                             viewModel.grantFreezeToken(habitId)
-                            android.widget.Toast.makeText(activity, "Freeze redeemed for 100 Loop Coins", android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(activity, "Recovery Pass applied", android.widget.Toast.LENGTH_SHORT).show()
                         }
                     },
                     onRetryAd = { RewardedAdManager.preload(activity) }

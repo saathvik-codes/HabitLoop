@@ -24,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,9 +60,6 @@ fun PerksScreen(
     onRetryAd: () -> Unit
 ) {
     val coinBalance by RewardWallet.balance.collectAsStateWithLifecycle()
-    val unlocked by RewardWallet.unlocked.collectAsStateWithLifecycle()
-    var dropResult by remember { mutableIntStateOf(0) }
-    var dropAvailable by remember { mutableStateOf(RewardWallet.dailyDropAvailable()) }
     Column(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
             Image(
@@ -70,9 +68,9 @@ fun PerksScreen(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxWidth().height(120.dp)
             )
-            Text("Streak protection", style = MaterialTheme.typography.headlineMedium)
+            Text("Recovery Passes", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Complete habits to earn Loop Coins. Redeem 100 coins or choose an optional rewarded ad.",
+                "Ten honest check-ins unlock one pass that can protect a single missed scheduled day. No virtual currency or store.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -81,7 +79,7 @@ fun PerksScreen(
 
         if (habits.isEmpty()) {
             Text(
-                "Add a habit first to start earning perks.",
+                "Add a habit first to begin building recovery progress.",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(24.dp)
             )
@@ -96,53 +94,12 @@ fun PerksScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                     ) {
                         Column(Modifier.fillMaxWidth().padding(18.dp)) {
-                            Text("🪙 $coinBalance Loop Coins", style = MaterialTheme.typography.headlineSmall)
-                            Text("Habit check-in +10 · every 7-day milestone +25 bonus", style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
-                item {
-                    Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
-                        Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Daily Loop Drop", style = MaterialTheme.typography.titleLarge)
-                            Text("One free reveal each day. No coins or payment required.", style = MaterialTheme.typography.bodyMedium)
-                            Button(
-                                onClick = {
-                                    dropResult = RewardWallet.claimDailyDrop()
-                                    dropAvailable = false
-                                },
-                                enabled = dropAvailable,
-                                modifier = Modifier.padding(top = 10.dp)
-                            ) { Text(if (dropAvailable) "Reveal today’s gift" else if (dropResult > 0) "+$dropResult Loop Coins" else "Come back tomorrow") }
-                        }
-                    }
-                }
-                item {
-                    Text("Loop Store", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
-                    Text("Clear prices, permanent unlocks and no randomized purchases.", style = MaterialTheme.typography.bodyMedium)
-                }
-                items(
-                    listOf(
-                        Triple("title_steady", "Steady Builder title", 120),
-                        Triple("title_comeback", "Comeback Champion title", 180),
-                        Triple("title_focus", "Focus Gardener title", 220)
-                    )
-                ) { item ->
-                    val owned = item.first in unlocked
-                    Card(shape = RoundedCornerShape(22.dp)) {
-                        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("🎁", style = MaterialTheme.typography.headlineSmall)
-                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                                Text(item.second, style = MaterialTheme.typography.titleMedium)
-                                Text(if (owned) "Permanent unlock" else "${item.third} Loop Coins", style = MaterialTheme.typography.bodySmall)
-                            }
-                            Button(
-                                onClick = {
-                                    if (owned) RewardWallet.equipTitle(item.second.removeSuffix(" title"))
-                                    else if (RewardWallet.purchase(item.first, item.third)) RewardWallet.equipTitle(item.second.removeSuffix(" title"))
-                                },
-                                enabled = owned || coinBalance >= item.third
-                            ) { Text(if (owned) "Equip" else "Unlock") }
+                            Text("${(coinBalance / 10).coerceAtMost(10)}/10 verified check-ins", style = MaterialTheme.typography.headlineSmall)
+                            LinearProgressIndicator(
+                                progress = { (coinBalance.coerceAtMost(100) / 100f) },
+                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                            )
+                            Text("Consistency earns practical protection—not coins or random prizes.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
                         }
                     }
                 }
@@ -155,7 +112,7 @@ fun PerksScreen(
                         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.AcUnit, null, tint = MaterialTheme.colorScheme.primary)
                             Column(Modifier.padding(start = 12.dp)) {
-                                Text("One ad = one freeze", style = MaterialTheme.typography.titleMedium)
+                                Text("Optional sponsored Recovery Pass", style = MaterialTheme.typography.titleMedium)
                                 Text(
                                     "A freeze automatically protects a streak when exactly one day is missed.",
                                     style = MaterialTheme.typography.bodyMedium
@@ -214,12 +171,12 @@ private fun PerkCard(
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(habit.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${habit.freezeTokensAvailable} freeze token${if (habit.freezeTokensAvailable == 1) "" else "s"}",
+                    "${habit.freezeTokensAvailable} Recovery Pass${if (habit.freezeTokensAvailable == 1) "" else "es"}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                Button(onClick = onRedeem, enabled = canRedeem) { Text("100 🪙") }
+                Button(onClick = onRedeem, enabled = canRedeem) { Text("Use progress") }
                 Button(
                     onClick = if (adState == RewardedAdState.Unavailable) onRetryAd else onWatchAd,
                     enabled = adState == RewardedAdState.Ready || adState == RewardedAdState.Unavailable

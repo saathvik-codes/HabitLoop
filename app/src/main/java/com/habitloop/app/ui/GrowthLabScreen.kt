@@ -53,7 +53,6 @@ fun GrowthLabScreen(onBack: () -> Unit) {
             "filter" -> DistractionFilter { score -> completed("Focus filter", score, 60) }
             "reflect" -> GuidedReflection { mood, note -> completed("Reflection", 15, 120, "$mood: $note") }
             "impulse" -> ImpulseControl { score -> completed("Impulse control", score, 45) }
-            "jams" -> CommunityJams(onBack = { mode = null })
             else -> GrowthLabHome(progress.sessions, progress.skillPoints, progress.lastSkill, onOpen = { mode = it })
         }
     }
@@ -97,21 +96,6 @@ private fun GrowthLabHome(sessions: Int, points: Int, lastSkill: String?, onOpen
         item { LabCard(Icons.Filled.FilterCenterFocus, "Distraction filter", "Ignore the word and identify its ink color.", "filter", onOpen) }
         item { LabCard(Icons.Filled.Psychology, "Impulse pause", "Respond to GO signals and resist false prompts under time pressure.", "impulse", onOpen) }
         item { LabCard(Icons.Filled.EditNote, "Guided reflection", "Name the day, notice what helped and choose one next step.", "reflect", onOpen) }
-        item {
-            Surface(
-                modifier = Modifier.fillMaxWidth().clickable { onOpen("jams") },
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Row(Modifier.padding(18.dp), verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Filled.Groups, null)
-                    Column(Modifier.padding(start = 12.dp)) {
-                        Text("Community Jams", style = MaterialTheme.typography.titleMedium)
-                        Text("Create or join a cooperative timed practice—no public ranking.", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-        }
         item {
             Text("HabitLoop practices support reflection and learning; they are not diagnosis, therapy or emergency support.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
