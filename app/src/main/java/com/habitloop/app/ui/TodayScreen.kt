@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
@@ -397,7 +398,12 @@ private fun DailyHabitRow(habit: Habit, isDone: Boolean, onToggle: (() -> Unit)?
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (isDone) Icon(Icons.Filled.Check, "Completed", tint = MaterialTheme.colorScheme.onPrimary)
-                    else Text("+", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                    else Icon(
+                        Icons.Filled.Add,
+                        contentDescription = "Mark complete",
+                        modifier = Modifier.size(26.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
