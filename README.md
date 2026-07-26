@@ -21,6 +21,8 @@ HabitLoop is a light-theme, local-first Android habit and personal-growth applic
 - Google, phone and verified email/password authentication
 - Firebase cloud backup and multi-device account recovery
 - User-created circles, members, check-ins, discussions and reporting
+- Full-screen circle workspace with Discussion, Check-in, Members and Weekly Board tabs
+- Dedicated full-screen circle creation flow
 - Seven-day consistency leaderboards
 - Community Jams with optional Instagram/Discord handles
 - Adaptive memory, attention, perspective and reflection exercises

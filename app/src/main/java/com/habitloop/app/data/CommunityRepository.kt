@@ -88,6 +88,11 @@ object CommunityRepository {
         return CommunitySnapshot(circles, memberships, feed)
     }
 
+    suspend fun circle(circleId: String): HabitCircle? {
+        val document = db.collection("circles").document(circleId).get().await()
+        return document.toObject(HabitCircle::class.java)?.copy(id = document.id)
+    }
+
     suspend fun createCircle(
         title: String,
         description: String,
@@ -97,7 +102,7 @@ object CommunityRepository {
         durationDays: Int,
         habitName: String,
         leaderName: String
-    ) {
+    ): String {
         val uid = FirebaseSync.ensureSignedIn()
         val ref = db.collection("circles").document()
         val circle = HabitCircle(
@@ -130,6 +135,7 @@ object CommunityRepository {
                 mapOf("userId" to uid, "username" to circle.leaderName, "role" to "leader", "joinedAt" to FieldValue.serverTimestamp())
             )
         }.await()
+        return ref.id
     }
 
     suspend fun join(circle: HabitCircle, displayName: String) {

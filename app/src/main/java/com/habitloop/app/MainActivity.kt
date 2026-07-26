@@ -60,6 +60,8 @@ import com.habitloop.app.ui.SettingsScreen
 import com.habitloop.app.ui.GrowthLabScreen
 import com.habitloop.app.ui.TodayScreen
 import com.habitloop.app.ui.NotificationInboxScreen
+import com.habitloop.app.ui.CircleDetailScreen
+import com.habitloop.app.ui.CreateCircleScreen
 import com.habitloop.app.ui.theme.HabitLoopTheme
 import com.habitloop.app.audio.ThemeMusicController
 import com.habitloop.app.audio.ThemeMusicPrefs
@@ -284,7 +286,30 @@ fun AppRoot(
             }
 
             composable(NavRoutes.Community.route) {
-                CommunityScreen(viewModel)
+                CommunityScreen(
+                    viewModel,
+                    onOpenCircle = { navController.navigate(NavRoutes.CircleDetail.buildRoute(it)) },
+                    onCreateCircle = { navController.navigate(NavRoutes.CreateCircle.route) }
+                )
+            }
+
+            composable(NavRoutes.CircleDetail.route) { entry ->
+                CircleDetailScreen(
+                    circleId = entry.arguments?.getString("circleId").orEmpty(),
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(NavRoutes.CreateCircle.route) {
+                CreateCircleScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onCreated = { circleId ->
+                        navController.navigate(NavRoutes.CircleDetail.buildRoute(circleId)) {
+                            popUpTo(NavRoutes.CreateCircle.route) { inclusive = true }
+                        }
+                    }
+                )
             }
 
             composable(NavRoutes.AppGuide.route) {

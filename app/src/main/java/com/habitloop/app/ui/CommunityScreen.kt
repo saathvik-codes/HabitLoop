@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 private enum class TogetherTab(val label: String) { Circles("Discover"), MyCircles("My circles"), Feed("Check-ins") }
 
 @Composable
-fun CommunityScreen(viewModel: HabitViewModel) {
+fun CommunityScreen(viewModel: HabitViewModel, onOpenCircle: (String) -> Unit, onCreateCircle: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var snapshot by remember { mutableStateOf<CommunitySnapshot?>(null) }
@@ -123,7 +123,7 @@ fun CommunityScreen(viewModel: HabitViewModel) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Together", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-                FilledTonalButton(onClick = { showCreate = true }) {
+                FilledTonalButton(onClick = onCreateCircle) {
                     Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
                     Text("Create", Modifier.padding(start = 6.dp))
                 }
@@ -159,7 +159,7 @@ fun CommunityScreen(viewModel: HabitViewModel) {
                                 busyId = null
                                 refresh()
                             }
-                        }, { checkInCircle = circle }, { memberCircle = circle }, { chatCircle = circle }, { rankingCircle = circle }, { profileCircle = circle })
+                        }, { onOpenCircle(circle.id) }, { onOpenCircle(circle.id) }, { onOpenCircle(circle.id) }, { onOpenCircle(circle.id) }, { onOpenCircle(circle.id) })
                     }
                     item { Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Sponsored", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -169,7 +169,7 @@ fun CommunityScreen(viewModel: HabitViewModel) {
                 TogetherTab.MyCircles -> {
                     val mine = state.circles.filter { it.id in state.joinedCircleIds }
                     if (mine.isEmpty()) item { CommunityEmpty("No circles yet", "Join one focused group and make your first check-in.") }
-                    items(mine, key = { it.id }) { CircleCard(it, true, busyId == it.id, {}, { checkInCircle = it }, { memberCircle = it }, { chatCircle = it }, { rankingCircle = it }, { profileCircle = it }) }
+                    items(mine, key = { it.id }) { CircleCard(it, true, busyId == it.id, {}, { onOpenCircle(it.id) }, { onOpenCircle(it.id) }, { onOpenCircle(it.id) }, { onOpenCircle(it.id) }, { onOpenCircle(it.id) }) }
                 }
                 TogetherTab.Feed -> {
                     if (state.recentCheckIns.isEmpty()) item { CommunityEmpty("The room is quiet", "Check in to a joined circle. Short, useful updates appear here.") }
