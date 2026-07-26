@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns(userId) { return signedIn() && request.auth.uid == userId; }
+
+    match /users/{userId} {
+      allow read, write: if owns(userId);
+      match /{document=**} { allow read, write: if owns(userId); }
+    }
+
+    match /circles/{circleId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 50
+        && request.resource.data.description.size() <= 240
+        && request.resource.data.durationDays >= 7
+        && request.resource.data.durationDays <= 90
+        && request.resource.data.featured == false;
+      allow update: if signedIn()
+        && (
+          (request.auth.uid == resource.data.ownerId
+            && request.resource.data.ownerId == resource.data.ownerId
+            && request.resource.data.featured == resource.data.featured)
+          || request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['memberCount', 'checkInCount'])
+        );
+      allow delete: if signedIn()
+        && request.auth.uid == resource.data.ownerId
+        && resource.data.featured == false;
+
+      match /members/{userId} {
+        allow read: if signedIn();
+        allow create, update, delete: if owns(userId);
+      }
+
+      match /messages/{messageId} {
+        allow read: if signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid)/circleMemberships/$(circleId));
+        allow create: if signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid)/circleMemberships/$(circleId))
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.circleId == circleId
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.username.size() <= 24;
+        allow update: if false;
+        allow delete: if signedIn()
+          && (resource.data.userId == request.auth.uid
+            || get(/databases/$(database)/documents/circles/$(circleId)).data.ownerId == request.auth.uid);
+      }
+    }
+
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.reason.size() <= 60;
+      allow read, update, delete: if false;
+    }
+
+    match /checkIns/{checkInId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.message.size() <= 180
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/circleMemberships/$(request.resource.data.circleId));
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /jams/{jamId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 50
+        && request.resource.data.durationMinutes >= 2
+        && request.resource.data.durationMinutes <= 60;
+      allow update: if signedIn()
+        && (
+          request.auth.uid == resource.data.ownerId
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantCount'])
+        );
+      allow delete: if signedIn() && request.auth.uid == resource.data.ownerId;
+
+      match /participants/{userId} {
+        allow read: if signedIn();
+        allow create, update, delete: if owns(userId);
+      }
+    }
+  }
+}

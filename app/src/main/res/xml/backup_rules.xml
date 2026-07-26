@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-Android-12 equivalent of data_extraction_rules.xml — same exclusion,
+     older backup API. -->
+<full-backup-content>
+    <exclude domain="database" path="habitloop.db" />
+</full-backup-content>

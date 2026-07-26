@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ backup control. Without this, allowBackup="true" (default)
+  means the habit database — including anything a user names a habit, which
+  could be personal (e.g. a sobriety or health habit) — gets included in
+  cloud backup/device-transfer by default with no exclusions. Explicitly
+  scoping this is a real privacy decision, not boilerplate.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="habitloop.db" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="habitloop.db" />
+    </device-transfer>
+</data-extraction-rules>

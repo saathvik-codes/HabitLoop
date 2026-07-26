@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Explicitly forbids plaintext HTTP for every domain. Nothing in this app
+  should ever need it (AdMob and any future backend calls are HTTPS-only),
+  so this closes off a class of MITM risk by default rather than relying on
+  every future network call being written correctly.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,29 @@
+package com.habitloop.app.ui
+
+sealed class NavRoutes(val route: String) {
+    data object Onboarding : NavRoutes("onboarding")
+    data object Today : NavRoutes("today")
+    data object Habits : NavRoutes("habits")
+    data object Insights : NavRoutes("insights")
+    data object Profile : NavRoutes("profile")
+    data object Community : NavRoutes("community")
+    data object Perks : NavRoutes("perks")
+    data object Settings : NavRoutes("settings")
+    data object AccountSecurity : NavRoutes("account_security")
+    data object AppGuide : NavRoutes("app_guide")
+    data object Auth : NavRoutes("auth")
+    data object EditProfile : NavRoutes("edit_profile")
+    data object GrowthLab : NavRoutes("growth_lab")
+    data object HabitDetail : NavRoutes("habit/{habitId}") {
+        fun buildRoute(habitId: Long) = "habit/$habitId"
+    }
+}
+
+/** Routes that show the persistent bottom nav bar. */
+val BOTTOM_NAV_ROUTES = setOf(
+    NavRoutes.Today.route,
+    NavRoutes.Habits.route,
+    NavRoutes.Insights.route,
+    NavRoutes.Community.route,
+    NavRoutes.Profile.route
+)
