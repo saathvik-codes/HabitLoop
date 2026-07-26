@@ -14,6 +14,7 @@ sealed class NavRoutes(val route: String) {
     data object Auth : NavRoutes("auth")
     data object EditProfile : NavRoutes("edit_profile")
     data object GrowthLab : NavRoutes("growth_lab")
+    data object Notifications : NavRoutes("notifications")
     data object HabitDetail : NavRoutes("habit/{habitId}") {
         fun buildRoute(habitId: Long) = "habit/$habitId"
     }

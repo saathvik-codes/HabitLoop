@@ -6,6 +6,7 @@ import com.habitloop.app.data.HabitDatabase
 import com.habitloop.app.data.HabitRepository
 import com.habitloop.app.data.ReminderPrefs
 import com.habitloop.app.data.RewardWallet
+import com.habitloop.app.data.NotificationInbox
 import com.habitloop.app.worker.ReminderScheduler
 import com.habitloop.app.notifications.HabitLoopMessagingService
 import com.google.firebase.messaging.FirebaseMessaging
@@ -30,6 +31,7 @@ class HabitLoopApp : Application() {
     override fun onCreate() {
         super.onCreate()
         RewardWallet.initialize(this)
+        NotificationInbox.initialize(this)
         HabitLoopMessagingService.createChannels(this)
         repository = HabitRepository(HabitDatabase.getInstance(this).habitDao())
         ReminderScheduler.scheduleDailyReminder(

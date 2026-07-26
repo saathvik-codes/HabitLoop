@@ -14,6 +14,7 @@ import com.habitloop.app.MainActivity
 import com.habitloop.app.R
 import com.habitloop.app.data.FirebaseSync
 import com.habitloop.app.data.NotificationPrefs
+import com.habitloop.app.data.NotificationInbox
 import java.security.MessageDigest
 
 class HabitLoopMessagingService : FirebaseMessagingService() {
@@ -33,6 +34,7 @@ class HabitLoopMessagingService : FirebaseMessagingService() {
         createChannels(this)
         val title = message.data["title"] ?: message.notification?.title ?: "HabitLoop"
         val body = message.data["body"] ?: message.notification?.body ?: "There’s something new in your loop."
+        NotificationInbox.add(title, body, category, message.messageId ?: "${category}_${System.currentTimeMillis()}")
         val openIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("notification_category", category)

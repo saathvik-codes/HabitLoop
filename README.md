@@ -91,8 +91,11 @@ Cloud Functions deployment requires the Firebase Blaze plan. The Android client,
 - Open circle discussions update instantly through Firestore snapshot listeners.
 - On the free Firebase plan, WorkManager checks for new joined-circle messages approximately every 15 minutes.
 - True closed-app instant push requires deployment of the included Cloud Function on Firebase Blaze.
+- Notification taps route to Today, Together or Growth Lab based on category.
+- A private on-device Activity inbox retains the latest 50 reminders and community updates.
 - Users can disable circle, Jam and streak notifications independently.
 - Quiet hours suppress non-urgent notifications between 10 PM and 7 AM.
+- Habit names are hidden in lock-screen copy unless the user explicitly enables them.
 - Message push previews contain only the chosen username, circle title and shortened message.
 
 ## Security and privacy

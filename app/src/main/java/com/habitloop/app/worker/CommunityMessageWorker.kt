@@ -13,6 +13,7 @@ import com.habitloop.app.R
 import com.habitloop.app.data.CircleMessage
 import com.habitloop.app.data.FirebaseSync
 import com.habitloop.app.data.NotificationPrefs
+import com.habitloop.app.data.NotificationInbox
 import com.habitloop.app.notifications.HabitLoopMessagingService
 import kotlinx.coroutines.tasks.await
 
@@ -57,6 +58,7 @@ class CommunityMessageWorker(context: Context, params: WorkerParameters) : Corou
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val body = "${message.username.substringBefore("@")}: ${message.text.take(120)}"
+        NotificationInbox.add("New circle message", body, "circle_message", "fallback_${message.id}")
         NotificationManagerCompat.from(applicationContext).notify(
             "fallback_${message.id}".hashCode(),
             NotificationCompat.Builder(applicationContext, HabitLoopMessagingService.CHANNEL_COMMUNITY)

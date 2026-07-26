@@ -14,6 +14,7 @@ import com.habitloop.app.R
 import com.habitloop.app.data.Habit
 import com.habitloop.app.data.HabitDatabase
 import com.habitloop.app.data.NotificationPrefs
+import com.habitloop.app.data.NotificationInbox
 import com.habitloop.app.data.isScheduledOn
 import kotlinx.coroutines.flow.first
 
@@ -87,6 +88,12 @@ class ReminderWorker(
             .setAutoCancel(true)
             .setVisibility(if (revealNames) NotificationCompat.VISIBILITY_PRIVATE else NotificationCompat.VISIBILITY_PUBLIC)
             .build()
+        NotificationInbox.add(
+            if (incomplete.size == 1) "One small loop left" else "${incomplete.size} loops left today",
+            body,
+            "habit_reminder",
+            "daily_${java.time.LocalDate.now()}"
+        )
         manager.notify(REMINDER_NOTIFICATION_ID, notification)
     }
 

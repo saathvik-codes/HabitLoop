@@ -54,7 +54,8 @@ fun SettingsScreen(
     onOpenAccount: () -> Unit,
     onOpenGuide: () -> Unit,
     onEditProfile: () -> Unit,
-    onOpenRewards: () -> Unit
+    onOpenRewards: () -> Unit,
+    onOpenNotifications: () -> Unit
 ) {
     val context = LocalContext.current
     var hour by remember { mutableIntStateOf(ReminderPrefs.getHour(context)) }
@@ -145,6 +146,7 @@ fun SettingsScreen(
                 }
             }
         }
+        item { SettingsLink(Icons.Filled.NotificationsActive, "Activity inbox", "Review reminders and circle updates", onOpenNotifications) }
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),

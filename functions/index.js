@@ -26,17 +26,18 @@ exports.notifyCircleMessage = onDocumentCreated(
     const deviceSnapshots = await Promise.all(
       recipientIds.map((uid) => db.collection("users").doc(uid).collection("devices").get())
     );
-    const tokens = deviceSnapshots.flatMap((snapshot) =>
+    const devices = deviceSnapshots.flatMap((snapshot) =>
       snapshot.docs
-        .map((doc) => doc.data())
+        .map((doc) => ({ ...doc.data(), ref: doc.ref }))
         .filter((device) => device.circleMessages !== false && typeof device.token === "string")
-        .map((device) => device.token)
+        .map((device) => ({ token: device.token, ref: device.ref }))
     );
-    if (!tokens.length) return;
+    if (!devices.length) return;
     const body = `${String(message.username || "A member").slice(0, 24)}: ${String(message.text).slice(0, 120)}`;
-    for (let index = 0; index < tokens.length; index += 500) {
-      await getMessaging().sendEachForMulticast({
-        tokens: tokens.slice(index, index + 500),
+    for (let index = 0; index < devices.length; index += 500) {
+      const batch = devices.slice(index, index + 500);
+      const response = await getMessaging().sendEachForMulticast({
+        tokens: batch.map((device) => device.token),
         data: {
           category: "circle_message",
           circleId,
@@ -48,6 +49,16 @@ exports.notifyCircleMessage = onDocumentCreated(
           ttl: 60 * 60 * 1000,
         },
       });
+      const staleCodes = new Set([
+        "messaging/registration-token-not-registered",
+        "messaging/invalid-registration-token",
+      ]);
+      await Promise.all(response.responses.map((result, resultIndex) => {
+        const ref = batch[resultIndex].ref;
+        return !result.success && ref && staleCodes.has(result.error && result.error.code)
+          ? ref.delete()
+          : Promise.resolve();
+      }));
     }
   }
 );

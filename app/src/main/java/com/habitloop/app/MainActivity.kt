@@ -1,6 +1,7 @@
 package com.habitloop.app
 
 import android.os.Bundle
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -22,6 +23,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,12 +59,20 @@ import com.habitloop.app.ui.PerksScreen
 import com.habitloop.app.ui.SettingsScreen
 import com.habitloop.app.ui.GrowthLabScreen
 import com.habitloop.app.ui.TodayScreen
+import com.habitloop.app.ui.NotificationInboxScreen
 import com.habitloop.app.ui.theme.HabitLoopTheme
 import com.habitloop.app.audio.ThemeMusicController
 import com.habitloop.app.audio.ThemeMusicPrefs
 import com.habitloop.app.data.UsageTracker
 
 class MainActivity : ComponentActivity() {
+    private var notificationCategory by mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationCategory = intent.getStringExtra("notification_category")
+    }
     override fun onStart() {
         super.onStart()
         UsageTracker.recordOpen(this)
@@ -75,6 +87,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        notificationCategory = intent?.getStringExtra("notification_category")
         val repository = (application as HabitLoopApp).repository
 
         MobileAds.initialize(this)
@@ -92,7 +105,9 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = startDestination,
                         viewModel = viewModel,
-                        activity = this
+                        activity = this,
+                        notificationCategory = notificationCategory,
+                        onNotificationConsumed = { notificationCategory = null }
                     )
                 }
             }
@@ -105,12 +120,26 @@ fun AppRoot(
     navController: NavHostController,
     startDestination: String,
     viewModel: HabitViewModel,
-    activity: MainActivity
+    activity: MainActivity,
+    notificationCategory: String?,
+    onNotificationConsumed: () -> Unit
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomNav = currentRoute in BOTTOM_NAV_ROUTES
     val rewardedAdState by RewardedAdManager.state.collectAsStateWithLifecycle()
+    LaunchedEffect(notificationCategory) {
+        if (notificationCategory != null && OnboardingPrefs.hasOnboarded(activity)) {
+            navController.navigate(
+                when (notificationCategory) {
+                    "circle_message" -> NavRoutes.Community.route
+                    "jam" -> NavRoutes.GrowthLab.route
+                    else -> NavRoutes.Today.route
+                }
+            ) { launchSingleTop = true }
+            onNotificationConsumed()
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -157,7 +186,8 @@ fun AppRoot(
                     onOpenAccount = { navController.navigate(NavRoutes.AccountSecurity.route) },
                     onOpenGuide = { navController.navigate(NavRoutes.AppGuide.route) },
                     onEditProfile = { navController.navigate(NavRoutes.EditProfile.route) },
-                    onOpenRewards = { navController.navigate(NavRoutes.Perks.route) }
+                    onOpenRewards = { navController.navigate(NavRoutes.Perks.route) },
+                    onOpenNotifications = { navController.navigate(NavRoutes.Notifications.route) }
                 )
             }
 
@@ -224,6 +254,20 @@ fun AppRoot(
             }
             composable(NavRoutes.GrowthLab.route) {
                 GrowthLabScreen(onBack = { navController.popBackStack() })
+            }
+            composable(NavRoutes.Notifications.route) {
+                NotificationInboxScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenCategory = { category ->
+                        navController.navigate(
+                            when (category) {
+                                "circle_message" -> NavRoutes.Community.route
+                                "jam" -> NavRoutes.GrowthLab.route
+                                else -> NavRoutes.Today.route
+                            }
+                        )
+                    }
+                )
             }
 
             composable(NavRoutes.AccountSecurity.route) {
