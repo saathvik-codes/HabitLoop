@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.workDataOf
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -26,6 +28,14 @@ object ReminderScheduler {
             WORK_NAME,
             if (replaceExisting) ExistingPeriodicWorkPolicy.UPDATE else ExistingPeriodicWorkPolicy.KEEP,
             request
+        )
+    }
+
+    fun sendTest(context: Context) {
+        WorkManager.getInstance(context).enqueue(
+            OneTimeWorkRequestBuilder<ReminderWorker>()
+                .setInputData(workDataOf(ReminderWorker.KEY_TEST to true))
+                .build()
         )
     }
 }

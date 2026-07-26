@@ -36,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import com.google.android.gms.ads.MobileAds
 import com.habitloop.app.ads.RewardedAdManager
 import com.habitloop.app.ads.RewardedAdState
@@ -322,7 +323,10 @@ fun AppRoot(
                 )
             }
 
-            composable(NavRoutes.CircleDetail.route) { entry ->
+            composable(
+                route = NavRoutes.CircleDetail.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "habitloop://circle/{circleId}" })
+            ) { entry ->
                 val circleId = entry.arguments?.getString("circleId").orEmpty()
                 CommunityProfileScreen(
                     circleId = circleId,

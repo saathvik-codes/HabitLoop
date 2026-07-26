@@ -79,6 +79,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:23.2.0")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.3")
 
     // Firebase (anonymous auth for a stable per-device user ID + Firestore cloud sync)
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))

@@ -283,6 +283,13 @@ fun SettingsScreen(
                 ) {
                     Text(if (saved > 0) "Reminder saved" else "Save ${String.format("%02d:%02d", hour, minute)} reminder")
                 }
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { ReminderScheduler.sendTest(context) },
+                    enabled = systemNotificationsEnabled,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    Text("Send a test notification")
+                }
             }
         }
         }

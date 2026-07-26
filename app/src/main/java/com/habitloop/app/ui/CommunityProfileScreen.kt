@@ -1,5 +1,7 @@
 package com.habitloop.app.ui
 
+import android.content.Intent
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -18,12 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.habitloop.app.data.CommunityRepository
 import com.habitloop.app.data.HabitCircle
 import com.habitloop.app.data.UserPrefs
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 
 @Composable
 fun CommunityProfileScreen(
@@ -36,6 +41,23 @@ fun CommunityProfileScreen(
 ) {
     var circle by remember(circleId) { mutableStateOf<HabitCircle?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showQr by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val inviteLink = "habitloop://circle/$circleId"
+    if (showQr) {
+        CommunityQrDialog(
+            title = circle?.title ?: "HabitLoop community",
+            inviteLink = inviteLink,
+            onDismiss = { showQr = false },
+            onShare = {
+                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "Join ${circle?.title ?: "my HabitLoop community"}")
+                    putExtra(Intent.EXTRA_TEXT, "Join me on HabitLoop: $inviteLink")
+                }, "Share community invite"))
+            }
+        )
+    }
     LaunchedEffect(circleId) {
         circle = runCatching { CommunityRepository.circle(circleId) }
             .onFailure { error = CommunityRepository.readableError(it) }.getOrNull()
@@ -79,6 +101,24 @@ fun CommunityProfileScreen(
                         }
                     }
                     Text("Led by @${model.leaderName.substringBefore("@")}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FilledTonalButton(onClick = { showQr = true }, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Filled.QrCode2, null)
+                            Text("QR invite", Modifier.padding(start = 7.dp))
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "Join ${model.title} on HabitLoop: $inviteLink")
+                                }, "Share community invite"))
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.Share, null)
+                            Text("Share", Modifier.padding(start = 7.dp))
+                        }
+                    }
                     Text("Community spaces", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 22.dp, bottom = 7.dp))
                     DestinationCard(Icons.Filled.ChatBubble, "Discussion", "Questions, ideas and live conversation", Color(0xFFE9DFFF), onDiscussion)
                     DestinationCard(Icons.Filled.CheckCircle, "Daily check-in", "Share progress without exposing private habits", Color(0xFFDDF3E4), onCheckIn)
@@ -95,6 +135,38 @@ fun CommunityProfileScreen(
         }
         if (circle == null && error == null) item { LinearProgressIndicator(Modifier.fillMaxWidth().padding(20.dp)) }
     }
+}
+
+@Composable
+private fun CommunityQrDialog(title: String, inviteLink: String, onDismiss: () -> Unit, onShare: () -> Unit) {
+    val bitmap = remember(inviteLink) {
+        runCatching {
+            val matrix = QRCodeWriter().encode(inviteLink, BarcodeFormat.QR_CODE, 720, 720)
+            Bitmap.createBitmap(720, 720, Bitmap.Config.ARGB_8888).apply {
+                for (x in 0 until 720) for (y in 0 until 720) {
+                    setPixel(x, y, if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                }
+            }
+        }.getOrNull()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Invite to $title") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                bitmap?.let {
+                    androidx.compose.foundation.Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "Community invite QR code",
+                        modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                    )
+                }
+                Text("Scan with HabitLoop → Together → QR scanner", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 10.dp))
+            }
+        },
+        confirmButton = { Button(onClick = onShare) { Icon(Icons.Filled.Share, null); Text("Share link", Modifier.padding(start = 7.dp)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
 
 @Composable

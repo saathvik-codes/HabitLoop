@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,9 @@ import androidx.compose.ui.unit.dp
 import com.habitloop.app.ads.BannerAd
 import com.habitloop.app.data.*
 import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 
 private enum class TogetherTab(val label: String) { Circles("Discover"), MyCircles("My circles"), Feed("Check-ins") }
 
@@ -46,6 +50,13 @@ fun CommunityScreen(viewModel: HabitViewModel, onOpenCircle: (String) -> Unit, o
     var profileCircle by remember { mutableStateOf<HabitCircle?>(null) }
     var showCreate by remember { mutableStateOf(false) }
     val displayName = remember { UserPrefs.getName(context).orEmpty().ifBlank { "Loop member" } }
+    val qrScanner = rememberLauncherForActivityResult(ScanContract()) { result ->
+        val value = result.contents.orEmpty().trim()
+        val circleId = Regex("""^habitloop://circle/([A-Za-z0-9_-]+)$""")
+            .matchEntire(value)?.groupValues?.getOrNull(1)
+        if (circleId != null) onOpenCircle(circleId)
+        else if (value.isNotBlank()) error = "That QR code is not a HabitLoop community invite."
+    }
 
     fun refresh() {
         scope.launch {
@@ -123,6 +134,16 @@ fun CommunityScreen(viewModel: HabitViewModel, onOpenCircle: (String) -> Unit, o
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Together", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                IconButton(onClick = {
+                    qrScanner.launch(
+                        ScanOptions()
+                            .setPrompt("Scan a HabitLoop community invite")
+                            .setBeepEnabled(false)
+                            .setOrientationLocked(false)
+                    )
+                }) {
+                    Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan community invite")
+                }
                 FilledTonalButton(onClick = onCreateCircle) {
                     Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
                     Text("Create", Modifier.padding(start = 6.dp))

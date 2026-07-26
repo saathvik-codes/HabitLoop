@@ -24,6 +24,10 @@ class ReminderWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        if (inputData.getBoolean(KEY_TEST, false)) {
+            sendTestNotification()
+            return Result.success()
+        }
         if (!NotificationPrefs.habitReminders(applicationContext)) return Result.success()
         if (NotificationPrefs.quietHours(applicationContext) && NotificationPrefs.isQuietNow()) return Result.success()
         if (!NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) return Result.success()
@@ -32,6 +36,27 @@ class ReminderWorker(
             .filter { it.isScheduledOn(date) && it.lastCompletedEpochDay != date.toEpochDay() }
         if (incomplete.isNotEmpty()) notify(incomplete)
         return Result.success()
+    }
+
+    private fun sendTestNotification() {
+        if (!NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) return
+        val manager = applicationContext.getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, "Daily habit reminders", NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        }
+        val body = "Your reminders and Activity inbox are connected."
+        NotificationInbox.add("HabitLoop test", body, "habit_reminder", "notification_test")
+        manager.notify(
+            TEST_NOTIFICATION_ID,
+            NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("HabitLoop notifications work")
+                .setContentText(body)
+                .setAutoCancel(true)
+                .build()
+        )
     }
 
     private fun notify(incomplete: List<Habit>) {
@@ -100,5 +125,7 @@ class ReminderWorker(
     companion object {
         const val CHANNEL_ID = "daily_reminder"
         const val REMINDER_NOTIFICATION_ID = 1001
+        const val TEST_NOTIFICATION_ID = 1002
+        const val KEY_TEST = "notification_test"
     }
 }
