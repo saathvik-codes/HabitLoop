@@ -16,4 +16,11 @@ object OnboardingPrefs {
             .putBoolean(KEY_ONBOARDED, true)
             .apply()
     }
+
+    fun reset(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_ONBOARDED, false)
+            .apply()
+    }
 }

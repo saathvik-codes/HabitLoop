@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,9 @@ fun CreateCircleScreen(viewModel: HabitViewModel, onBack: () -> Unit, onCreated:
     var category by remember { mutableStateOf("Wellbeing") }
     var cadence by remember { mutableStateOf("Daily") }
     var emoji by remember { mutableStateOf("🌱") }
+    var tagDraft by remember { mutableStateOf("") }
+    var tags by remember { mutableStateOf(emptyList<String>()) }
+    var bannerStyle by remember { mutableStateOf("sage") }
     var days by remember { mutableIntStateOf(21) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -59,6 +63,44 @@ fun CreateCircleScreen(viewModel: HabitViewModel, onBack: () -> Unit, onCreated:
                     FilterChip(emoji == it, { emoji = it }, label = { Text(it) })
                 }
             }
+            Text("Banner colour", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                listOf(
+                    "sage" to Color(0xFF78A083), "sunrise" to Color(0xFFF08A65),
+                    "ocean" to Color(0xFF4B91B5), "violet" to Color(0xFF8A75C9)
+                ).forEach { (style, color) ->
+                    FilterChip(
+                        selected = bannerStyle == style,
+                        onClick = { bannerStyle = style },
+                        label = { Text(style.replaceFirstChar { it.uppercase() }) },
+                        leadingIcon = { Surface(color = color, shape = androidx.compose.foundation.shape.CircleShape, modifier = Modifier.size(14.dp)) {} }
+                    )
+                }
+            }
+            Text("Discovery tags", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
+            Text("Add up to five topics so the right people can find your circle.", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = tagDraft,
+                onValueChange = { tagDraft = it.filter { ch -> ch.isLetterOrDigit() || ch == ' ' }.take(18) },
+                label = { Text("Add a tag") },
+                singleLine = true,
+                trailingIcon = {
+                    TextButton(
+                        enabled = tagDraft.trim().length >= 2 && tags.size < 5,
+                        onClick = {
+                            val clean = tagDraft.trim()
+                            if (tags.none { it.equals(clean, true) }) tags = tags + clean
+                            tagDraft = ""
+                        }
+                    ) { Text("Add") }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                tags.forEach { tag ->
+                    InputChip(selected = false, onClick = { tags = tags - tag }, label = { Text("#$tag  ×") })
+                }
+            }
             Text("Rhythm", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 listOf("Daily", "Weekdays", "3× weekly", "Flexible").forEach {
@@ -73,7 +115,9 @@ fun CreateCircleScreen(viewModel: HabitViewModel, onBack: () -> Unit, onCreated:
                     busy = true
                     scope.launch {
                         runCatching {
-                            val circleId = CommunityRepository.createCircle(title, description, category, emoji, cadence, days, habit, leader)
+                            val circleId = CommunityRepository.createCircle(
+                                title, description, category, emoji, cadence, days, habit, leader, tags, bannerStyle
+                            )
                             viewModel.addHabit(habit, "custom", "1,2,3,4,5,6,7", "Created for $title")
                             circleId
                         }.onSuccess { id ->

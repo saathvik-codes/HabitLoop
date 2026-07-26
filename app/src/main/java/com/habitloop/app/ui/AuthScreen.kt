@@ -171,7 +171,6 @@ private fun EmailAuthDialog(onDismiss: () -> Unit, onAuthenticated: () -> Unit) 
                                 } else {
                                     AuthManager.signInEmail(email, password)
                                     if (!AuthManager.reloadAndIsEmailVerified()) {
-                                        AuthManager.resendEmailVerification()
                                         waitingForVerification = true
                                     }
                                 }
@@ -186,10 +185,52 @@ private fun EmailAuthDialog(onDismiss: () -> Unit, onAuthenticated: () -> Unit) 
         },
         dismissButton = {
             if (waitingForVerification) {
-                TextButton(onClick = onDismiss, enabled = !busy) { Text("Close") }
+                Row {
+                    TextButton(
+                        enabled = !busy,
+                        onClick = {
+                            busy = true
+                            message = null
+                            scope.launch {
+                                runCatching { AuthManager.resendEmailVerification() }
+                                    .onSuccess {
+                                        busy = false
+                                        message = "A new verification email was sent. Check your inbox and spam folder."
+                                    }
+                                    .onFailure {
+                                        busy = false
+                                        message = AuthManager.readableError(it)
+                                    }
+                            }
+                        }
+                    ) { Text("Resend") }
+                    TextButton(onClick = onDismiss, enabled = !busy) { Text("Close") }
+                }
             } else {
-                TextButton(onClick = { createMode = !createMode; message = null }, enabled = !busy) {
-                    Text(if (createMode) "I already have an account" else "Create an account")
+                Column(horizontalAlignment = Alignment.End) {
+                    if (!createMode) {
+                        TextButton(
+                            enabled = !busy && email.contains("@"),
+                            onClick = {
+                                busy = true
+                                message = null
+                                scope.launch {
+                                    runCatching { AuthManager.sendPasswordReset(email) }
+                                        .onSuccess {
+                                            busy = false
+                                            message = "Password reset instructions were sent if an account exists for this email."
+                                        }
+                                        .onFailure {
+                                            busy = false
+                                            message = AuthManager.readableError(it)
+                                        }
+                                }
+                            }
+                        ) { Text("Forgot password?") }
+                    }
+                    TextButton(onClick = { createMode = !createMode; message = null }, enabled = !busy) {
+                        Text(if (createMode) "I already have an account" else "Create an account")
+                    }
                 }
             }
         }

@@ -85,7 +85,7 @@ fun CircleDetailScreen(circleId: String, onBack: () -> Unit) {
 }
 
 @Composable
-private fun CircleDiscussionContent(circleId: String, username: String, onError: (String) -> Unit) {
+fun CircleDiscussionContent(circleId: String, username: String, onError: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     var messages by remember(circleId) { mutableStateOf<List<CircleMessage>?>(null) }
     var draft by remember { mutableStateOf("") }
@@ -153,7 +153,7 @@ private fun CircleDiscussionContent(circleId: String, username: String, onError:
 }
 
 @Composable
-private fun CircleCheckInContent(circleId: String, username: String, onError: (String) -> Unit) {
+fun CircleCheckInContent(circleId: String, username: String, onError: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     var note by remember { mutableStateOf("") }
     var mood by remember { mutableStateOf("✅") }
@@ -181,7 +181,7 @@ private fun CircleCheckInContent(circleId: String, username: String, onError: (S
 }
 
 @Composable
-private fun CircleMembersContent(circleId: String, onError: (String) -> Unit) {
+fun CircleMembersContent(circleId: String, onError: (String) -> Unit) {
     var members by remember(circleId) { mutableStateOf<List<CircleMember>?>(null) }
     LaunchedEffect(circleId) {
         members = runCatching { CommunityRepository.members(circleId) }
@@ -207,7 +207,7 @@ private fun CircleMembersContent(circleId: String, onError: (String) -> Unit) {
 }
 
 @Composable
-private fun CircleBoardContent(circleId: String, onError: (String) -> Unit) {
+fun CircleBoardContent(circleId: String, onError: (String) -> Unit) {
     var ranks by remember(circleId) { mutableStateOf<List<CircleRank>?>(null) }
     LaunchedEffect(circleId) {
         ranks = runCatching { CommunityRepository.weeklyLeaderboard(circleId) }

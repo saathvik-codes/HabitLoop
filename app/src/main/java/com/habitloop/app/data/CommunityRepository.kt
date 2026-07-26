@@ -28,6 +28,7 @@ data class HabitCircle(
     val meetingSchedule: String = "Flexible check-ins",
     val guidelines: String = "Be kind, stay relevant, protect privacy, and avoid medical claims.",
     val bannerStyle: String = "sage",
+    val tags: List<String> = emptyList(),
     val createdAt: Timestamp? = null
 )
 
@@ -101,7 +102,9 @@ object CommunityRepository {
         cadence: String,
         durationDays: Int,
         habitName: String,
-        leaderName: String
+        leaderName: String,
+        tags: List<String> = emptyList(),
+        bannerStyle: String = "sage"
     ): String {
         val uid = FirebaseSync.ensureSignedIn()
         val ref = db.collection("circles").document()
@@ -119,6 +122,8 @@ object CommunityRepository {
             habitName = habitName.trim().take(50),
             mission = description.trim().take(180),
             agenda = "Build consistency around ${habitName.trim().take(50)} through useful check-ins and shared encouragement.",
+            tags = tags.map { it.trim().removePrefix("#").take(18) }.filter { it.length >= 2 }.distinct().take(5),
+            bannerStyle = bannerStyle.takeIf { it in setOf("sage", "sunrise", "ocean", "violet") } ?: "sage",
             createdAt = Timestamp.now()
         )
         require(circle.title.length >= 3 && circle.description.length >= 12 && circle.habitName.length >= 2) {

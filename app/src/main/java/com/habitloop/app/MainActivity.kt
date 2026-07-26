@@ -60,7 +60,12 @@ import com.habitloop.app.ui.SettingsScreen
 import com.habitloop.app.ui.GrowthLabScreen
 import com.habitloop.app.ui.TodayScreen
 import com.habitloop.app.ui.NotificationInboxScreen
-import com.habitloop.app.ui.CircleDetailScreen
+import com.habitloop.app.ui.CommunityProfileScreen
+import com.habitloop.app.ui.CircleFeatureScreen
+import com.habitloop.app.ui.CircleDiscussionContent
+import com.habitloop.app.ui.CircleCheckInContent
+import com.habitloop.app.ui.CircleMembersContent
+import com.habitloop.app.ui.CircleBoardContent
 import com.habitloop.app.ui.CreateCircleScreen
 import com.habitloop.app.ui.theme.HabitLoopTheme
 import com.habitloop.app.audio.ThemeMusicController
@@ -277,8 +282,9 @@ fun AppRoot(
                     onBack = { navController.popBackStack() },
                     onOpenAuth = { navController.navigate(NavRoutes.Auth.route) },
                     onSignedOut = {
-                        navController.navigate(NavRoutes.Auth.route) {
-                            popUpTo(navController.graph.id) { inclusive = true }
+                        OnboardingPrefs.reset(activity)
+                        navController.navigate(NavRoutes.Onboarding.route) {
+                            popUpTo(NavRoutes.Today.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
@@ -294,10 +300,35 @@ fun AppRoot(
             }
 
             composable(NavRoutes.CircleDetail.route) { entry ->
-                CircleDetailScreen(
-                    circleId = entry.arguments?.getString("circleId").orEmpty(),
-                    onBack = { navController.popBackStack() }
+                val circleId = entry.arguments?.getString("circleId").orEmpty()
+                CommunityProfileScreen(
+                    circleId = circleId,
+                    onBack = { navController.popBackStack() },
+                    onDiscussion = { navController.navigate(NavRoutes.CircleDiscussion.buildRoute(circleId)) },
+                    onCheckIn = { navController.navigate(NavRoutes.CircleCheckIn.buildRoute(circleId)) },
+                    onMembers = { navController.navigate(NavRoutes.CircleMembers.buildRoute(circleId)) },
+                    onBoard = { navController.navigate(NavRoutes.CircleBoard.buildRoute(circleId)) }
                 )
+            }
+            composable(NavRoutes.CircleDiscussion.route) { entry ->
+                CircleFeatureScreen(entry.arguments?.getString("circleId").orEmpty(), "Discussion", { navController.popBackStack() }) {
+                    id, username, onError -> CircleDiscussionContent(id, username, onError)
+                }
+            }
+            composable(NavRoutes.CircleCheckIn.route) { entry ->
+                CircleFeatureScreen(entry.arguments?.getString("circleId").orEmpty(), "Daily check-in", { navController.popBackStack() }) {
+                    id, username, onError -> CircleCheckInContent(id, username, onError)
+                }
+            }
+            composable(NavRoutes.CircleMembers.route) { entry ->
+                CircleFeatureScreen(entry.arguments?.getString("circleId").orEmpty(), "Members", { navController.popBackStack() }) {
+                    id, _, onError -> CircleMembersContent(id, onError)
+                }
+            }
+            composable(NavRoutes.CircleBoard.route) { entry ->
+                CircleFeatureScreen(entry.arguments?.getString("circleId").orEmpty(), "Weekly board", { navController.popBackStack() }) {
+                    id, _, onError -> CircleBoardContent(id, onError)
+                }
             }
 
             composable(NavRoutes.CreateCircle.route) {

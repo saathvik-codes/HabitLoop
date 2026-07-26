@@ -158,7 +158,9 @@ private fun StepProgressDots(currentStep: Int, totalSteps: Int) {
 private fun WelcomeStep(onContinue: (name: String?) -> Unit) {
     var name by remember { mutableStateOf("") }
     val trimmedName = name.trim()
-    val invalidName = name.isNotEmpty() && trimmedName.length < 2
+    val validUsername = trimmedName.length in 3..20 &&
+        trimmedName.all { it.isLetterOrDigit() || it == '_' }
+    val invalidName = name.isNotEmpty() && !validUsername
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -171,34 +173,33 @@ private fun WelcomeStep(onContinue: (name: String?) -> Unit) {
         )
         Text("Welcome to HabitLoop", style = MaterialTheme.typography.displayLarge)
         Text(
-            "What should we call you?",
+            "Choose your private username",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = 12.dp, bottom = 24.dp)
         )
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it.take(24) },
-            label = { Text("Your name") },
+            onValueChange = { name = it.filter { char -> char.isLetterOrDigit() || char == '_' }.take(20) },
+            label = { Text("Username") },
             singleLine = true,
             isError = invalidName,
             supportingText = {
-                Text(if (invalidName) "Enter at least 2 characters, or choose Skip." else "${name.length}/24")
+                Text(if (invalidName) "Use 3–20 letters, numbers or underscores." else "${name.length}/20 • shown to communities")
             },
             modifier = Modifier.fillMaxWidth()
         )
         Button(
             onClick = { onContinue(trimmedName.ifBlank { null }) },
-            enabled = trimmedName.length >= 2,
+            enabled = validUsername,
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
         ) {
             Text("Continue")
         }
-        TextButton(
-            onClick = { onContinue(null) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Skip")
-        }
+        Text(
+            "Your email and phone number are never used as your public community name.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 12.dp)
+        )
     }
 }
 

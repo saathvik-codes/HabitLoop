@@ -18,6 +18,18 @@ sealed class NavRoutes(val route: String) {
     data object CircleDetail : NavRoutes("circle/{circleId}") {
         fun buildRoute(circleId: String) = "circle/$circleId"
     }
+    data object CircleDiscussion : NavRoutes("circle/{circleId}/discussion") {
+        fun buildRoute(circleId: String) = "circle/$circleId/discussion"
+    }
+    data object CircleCheckIn : NavRoutes("circle/{circleId}/checkin") {
+        fun buildRoute(circleId: String) = "circle/$circleId/checkin"
+    }
+    data object CircleMembers : NavRoutes("circle/{circleId}/members") {
+        fun buildRoute(circleId: String) = "circle/$circleId/members"
+    }
+    data object CircleBoard : NavRoutes("circle/{circleId}/board") {
+        fun buildRoute(circleId: String) = "circle/$circleId/board"
+    }
     data object CreateCircle : NavRoutes("create_circle")
     data object HabitDetail : NavRoutes("habit/{habitId}") {
         fun buildRoute(habitId: Long) = "habit/$habitId"
