@@ -22,6 +22,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.AlternateEmail
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -103,6 +106,7 @@ fun EditProfileScreen(onBack: () -> Unit, onSaved: () -> Unit) {
                 value = name,
                 onValueChange = { name = it.take(40) },
                 label = { Text("Display name") },
+                leadingIcon = { Icon(Icons.Filled.Person, null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 18.dp)
             )
@@ -174,6 +178,7 @@ fun EditProfileScreen(onBack: () -> Unit, onSaved: () -> Unit) {
             OutlinedTextField(
                 instagram, { instagram = it.removePrefix("@").filter { c -> c.isLetterOrDigit() || c == '.' || c == '_' }.take(30) },
                 label = { Text("Instagram username") },
+                leadingIcon = { Icon(Icons.Filled.AlternateEmail, null) },
                 prefix = { Text("@") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
@@ -181,6 +186,7 @@ fun EditProfileScreen(onBack: () -> Unit, onSaved: () -> Unit) {
             OutlinedTextField(
                 discord, { discord = it.take(40) },
                 label = { Text("Discord username") },
+                leadingIcon = { Icon(Icons.Filled.Forum, null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )

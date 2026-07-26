@@ -7,6 +7,7 @@ import com.habitloop.app.data.HabitRepository
 import com.habitloop.app.data.ReminderPrefs
 import com.habitloop.app.data.RewardWallet
 import com.habitloop.app.data.NotificationInbox
+import com.habitloop.app.data.OnboardingPrefs
 import com.habitloop.app.worker.ReminderScheduler
 import com.habitloop.app.notifications.HabitLoopMessagingService
 import com.google.firebase.messaging.FirebaseMessaging
@@ -47,14 +48,16 @@ class HabitLoopApp : Application() {
                 .build()
         )
 
-        appScope.launch {
-            runCatching {
-                val uid = FirebaseSync.ensureSignedIn()
-                repository.restoreFromCloudIfEmpty(uid)
+        if (!OnboardingPrefs.isExplicitlySignedOut(this)) {
+            appScope.launch {
+                runCatching {
+                    val uid = FirebaseSync.ensureSignedIn()
+                    repository.restoreFromCloudIfEmpty(uid)
+                }
             }
-        }
-        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-            HabitLoopMessagingService.registerToken(this, token)
+            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                HabitLoopMessagingService.registerToken(this, token)
+            }
         }
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.habitloop.app.data.FirebaseSync
 import com.habitloop.app.data.UserPrefs
+import com.habitloop.app.notifications.HabitLoopMessagingService
 import kotlinx.coroutines.launch
 
 @Composable
@@ -132,10 +133,13 @@ fun AccountSecurityScreen(onBack: () -> Unit, onOpenAuth: () -> Unit, onSignedOu
             },
             confirmButton = {
                 TextButton(onClick = {
-                    FirebaseSync.signOut()
-                    connected = false
-                    showSignOutConfirmation = false
-                    onSignedOut()
+                    scope.launch {
+                        runCatching { HabitLoopMessagingService.unregisterCurrentDevice() }
+                        FirebaseSync.signOut()
+                        connected = false
+                        showSignOutConfirmation = false
+                        onSignedOut()
+                    }
                 }) { Text("Sign out") }
             },
             dismissButton = {

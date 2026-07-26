@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.firestore.FirebaseFirestore
 import com.habitloop.app.MainActivity
 import com.habitloop.app.R
@@ -16,6 +17,7 @@ import com.habitloop.app.data.FirebaseSync
 import com.habitloop.app.data.NotificationPrefs
 import com.habitloop.app.data.NotificationInbox
 import java.security.MessageDigest
+import kotlinx.coroutines.tasks.await
 
 class HabitLoopMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
@@ -77,6 +79,14 @@ class HabitLoopMessagingService : FirebaseMessagingService() {
                     "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
                 )
             )
+        }
+        suspend fun unregisterCurrentDevice() {
+            val uid = FirebaseSync.uidOrNull ?: return
+            val token = FirebaseMessaging.getInstance().token.await()
+            val id = MessageDigest.getInstance("SHA-256").digest(token.toByteArray())
+                .joinToString("") { "%02x".format(it) }.take(32)
+            FirebaseFirestore.getInstance().collection("users").document(uid)
+                .collection("devices").document(id).delete().await()
         }
         fun createChannels(context: Context) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

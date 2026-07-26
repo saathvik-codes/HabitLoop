@@ -26,11 +26,14 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.Card
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +67,7 @@ import com.habitloop.app.data.Habit
 import com.habitloop.app.data.HabitInsights
 import com.habitloop.app.data.HabitTemplates
 import com.habitloop.app.data.UserPrefs
+import com.habitloop.app.data.NotificationInbox
 import com.habitloop.app.data.isScheduledOn
 import java.time.LocalDate
 import java.time.LocalTime
@@ -74,10 +78,13 @@ fun TodayScreen(
     viewModel: HabitViewModel,
     onOpenHabit: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenNotifications: () -> Unit,
     onOpenGrowthLab: () -> Unit,
     onOpenCommunity: () -> Unit
 ) {
     val habits by viewModel.habits.collectAsStateWithLifecycle(initialValue = emptyList())
+    val inboxItems by NotificationInbox.items.collectAsStateWithLifecycle()
+    val unreadCount = inboxItems.count { !it.read }
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val today = LocalDate.now().toEpochDay()
@@ -134,6 +141,8 @@ fun TodayScreen(
             item {
                 TodayHeader(
                     name = UserPrefs.getName(context),
+                    unreadCount = unreadCount,
+                    onOpenNotifications = onOpenNotifications,
                     onOpenSettings = onOpenSettings
                 )
             }
@@ -227,7 +236,12 @@ private fun HomeShortcut(
 }
 
 @Composable
-private fun TodayHeader(name: String?, onOpenSettings: () -> Unit) {
+private fun TodayHeader(
+    name: String?,
+    unreadCount: Int,
+    onOpenNotifications: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -247,9 +261,24 @@ private fun TodayHeader(name: String?, onOpenSettings: () -> Unit) {
                 overflow = TextOverflow.Clip
             )
         }
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
-            IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                IconButton(onClick = onOpenNotifications) {
+                    BadgedBox(
+                        badge = {
+                            if (unreadCount > 0) Badge {
+                                Text(if (unreadCount > 9) "9+" else unreadCount.toString())
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Filled.Notifications, contentDescription = "Activity inbox")
+                    }
+                }
+            }
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                }
             }
         }
     }

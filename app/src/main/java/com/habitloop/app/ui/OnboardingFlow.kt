@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -67,7 +68,10 @@ private const val TOTAL_STEPS = 4
  * flow instead of a stack of separate pages.
  */
 @Composable
-fun OnboardingFlow(onFinished: (name: String?, habit: HabitDraft) -> Unit) {
+fun OnboardingFlow(
+    onFinished: (name: String?, habit: HabitDraft) -> Unit,
+    onSignIn: () -> Unit
+) {
     var step by remember { mutableIntStateOf(STEP_WELCOME) }
     var name by remember { mutableStateOf<String?>(null) }
     var selectedHabit by remember { mutableStateOf<HabitDraft?>(null) }
@@ -87,7 +91,8 @@ fun OnboardingFlow(onFinished: (name: String?, habit: HabitDraft) -> Unit) {
                     onContinue = { enteredName ->
                         name = enteredName
                         step = STEP_TEMPLATE
-                    }
+                    },
+                    onSignIn = onSignIn
                 )
                 STEP_TEMPLATE -> FirstHabitStep(
                     onHabitCreated = { habit ->
@@ -155,7 +160,7 @@ private fun StepProgressDots(currentStep: Int, totalSteps: Int) {
 }
 
 @Composable
-private fun WelcomeStep(onContinue: (name: String?) -> Unit) {
+private fun WelcomeStep(onContinue: (name: String?) -> Unit, onSignIn: () -> Unit) {
     var name by remember { mutableStateOf("") }
     val trimmedName = name.trim()
     val validUsername = trimmedName.length in 3..20 &&
@@ -181,6 +186,7 @@ private fun WelcomeStep(onContinue: (name: String?) -> Unit) {
             value = name,
             onValueChange = { name = it.filter { char -> char.isLetterOrDigit() || char == '_' }.take(20) },
             label = { Text("Username") },
+            leadingIcon = { Icon(Icons.Filled.Person, null) },
             singleLine = true,
             isError = invalidName,
             supportingText = {
@@ -194,6 +200,12 @@ private fun WelcomeStep(onContinue: (name: String?) -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
         ) {
             Text("Continue")
+        }
+        TextButton(
+            onClick = onSignIn,
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+        ) {
+            Text("Already use HabitLoop? Sign in")
         }
         Text(
             "Your email and phone number are never used as your public community name.",

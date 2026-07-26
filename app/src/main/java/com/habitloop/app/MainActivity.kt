@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +60,7 @@ import com.habitloop.app.ui.PerksScreen
 import com.habitloop.app.ui.SettingsScreen
 import com.habitloop.app.ui.GrowthLabScreen
 import com.habitloop.app.ui.TodayScreen
+import com.habitloop.app.ui.LaunchScreen
 import com.habitloop.app.ui.NotificationInboxScreen
 import com.habitloop.app.ui.CommunityProfileScreen
 import com.habitloop.app.ui.CircleFeatureScreen
@@ -71,6 +73,7 @@ import com.habitloop.app.ui.theme.HabitLoopTheme
 import com.habitloop.app.audio.ThemeMusicController
 import com.habitloop.app.audio.ThemeMusicPrefs
 import com.habitloop.app.data.UsageTracker
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     private var notificationCategory by mutableStateOf<String?>(null)
@@ -105,17 +108,31 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val viewModel = HabitViewModel(repository)
                     val navController = rememberNavController()
+                    var showLaunch by rememberSaveable { mutableStateOf(true) }
                     val startDestination =
-                        if (OnboardingPrefs.hasOnboarded(this)) NavRoutes.Today.route else NavRoutes.Onboarding.route
+                        if (OnboardingPrefs.shouldShowOnboarding(this)) {
+                            NavRoutes.Onboarding.route
+                        } else {
+                            NavRoutes.Today.route
+                        }
 
-                    AppRoot(
-                        navController = navController,
-                        startDestination = startDestination,
-                        viewModel = viewModel,
-                        activity = this,
-                        notificationCategory = notificationCategory,
-                        onNotificationConsumed = { notificationCategory = null }
-                    )
+                    LaunchedEffect(Unit) {
+                        delay(1500)
+                        showLaunch = false
+                    }
+
+                    if (showLaunch) {
+                        LaunchScreen()
+                    } else {
+                        AppRoot(
+                            navController = navController,
+                            startDestination = startDestination,
+                            viewModel = viewModel,
+                            activity = this,
+                            notificationCategory = notificationCategory,
+                            onNotificationConsumed = { notificationCategory = null }
+                        )
+                    }
                 }
             }
         }
@@ -136,7 +153,7 @@ fun AppRoot(
     val showBottomNav = currentRoute in BOTTOM_NAV_ROUTES
     val rewardedAdState by RewardedAdManager.state.collectAsStateWithLifecycle()
     LaunchedEffect(notificationCategory) {
-        if (notificationCategory != null && OnboardingPrefs.hasOnboarded(activity)) {
+        if (notificationCategory != null && !OnboardingPrefs.shouldShowOnboarding(activity)) {
             navController.navigate(
                 when (notificationCategory) {
                     "circle_message" -> NavRoutes.Community.route
@@ -159,22 +176,28 @@ fun AppRoot(
             modifier = Modifier.padding(padding)
         ) {
             composable(NavRoutes.Onboarding.route) {
-                OnboardingFlow(onFinished = { name, habit ->
-                    if (name != null) {
-                        UserPrefs.setName(activity, name)
-                        FirebaseSync.pushProfile(name)
+                OnboardingFlow(
+                    onFinished = { name, habit ->
+                        if (name != null) {
+                            UserPrefs.setName(activity, name)
+                            FirebaseSync.pushProfile(name)
+                        }
+                        viewModel.addHabit(
+                            name = habit.name,
+                            templateId = habit.templateId,
+                            scheduleDaysCsv = habit.scheduleDaysCsv,
+                            motivation = habit.motivation
+                        )
+                        OnboardingPrefs.markOnboarded(activity)
+                        navController.navigate(NavRoutes.Today.route) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onSignIn = {
+                        navController.navigate(NavRoutes.Auth.route) { launchSingleTop = true }
                     }
-                    viewModel.addHabit(
-                        name = habit.name,
-                        templateId = habit.templateId,
-                        scheduleDaysCsv = habit.scheduleDaysCsv,
-                        motivation = habit.motivation
-                    )
-                    OnboardingPrefs.markOnboarded(activity)
-                    navController.navigate(NavRoutes.Today.route) {
-                        popUpTo(NavRoutes.Onboarding.route) { inclusive = true }
-                    }
-                })
+                )
             }
 
             composable(NavRoutes.Today.route) {
@@ -182,6 +205,7 @@ fun AppRoot(
                     viewModel = viewModel,
                     onOpenHabit = { habitId -> navController.navigate(NavRoutes.HabitDetail.buildRoute(habitId)) },
                     onOpenSettings = { navController.navigate(NavRoutes.Settings.route) },
+                    onOpenNotifications = { navController.navigate(NavRoutes.Notifications.route) },
                     onOpenGrowthLab = { navController.navigate(NavRoutes.GrowthLab.route) },
                     onOpenCommunity = { navController.navigate(NavRoutes.Community.route) }
                 )
@@ -282,11 +306,10 @@ fun AppRoot(
                     onBack = { navController.popBackStack() },
                     onOpenAuth = { navController.navigate(NavRoutes.Auth.route) },
                     onSignedOut = {
-                        OnboardingPrefs.reset(activity)
-                        navController.navigate(NavRoutes.Onboarding.route) {
-                            popUpTo(NavRoutes.Today.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
+                        OnboardingPrefs.markExplicitlySignedOut(activity)
+                        // Rebuild the navigation graph from the durable signed-out
+                        // state so Back or restored state cannot reopen private screens.
+                        activity.recreate()
                     }
                 )
             }
@@ -351,8 +374,9 @@ fun AppRoot(
                 AuthScreen(
                     onBack = { navController.popBackStack() },
                     onAuthenticated = {
+                        OnboardingPrefs.markOnboarded(activity)
                         navController.navigate(NavRoutes.Today.route) {
-                            popUpTo(NavRoutes.Auth.route) { inclusive = true }
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
