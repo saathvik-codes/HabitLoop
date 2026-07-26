@@ -23,6 +23,11 @@ data class HabitCircle(
     val leaderName: String = "HabitLoop",
     val durationDays: Int = 21,
     val habitName: String = "",
+    val mission: String = "",
+    val agenda: String = "",
+    val meetingSchedule: String = "Flexible check-ins",
+    val guidelines: String = "Be kind, stay relevant, protect privacy, and avoid medical claims.",
+    val bannerStyle: String = "sage",
     val createdAt: Timestamp? = null
 )
 
@@ -107,6 +112,8 @@ object CommunityRepository {
             leaderName = leaderName.trim().take(30).ifBlank { "Loop leader" },
             durationDays = durationDays.coerceIn(7, 90),
             habitName = habitName.trim().take(50),
+            mission = description.trim().take(180),
+            agenda = "Build consistency around ${habitName.trim().take(50)} through useful check-ins and shared encouragement.",
             createdAt = Timestamp.now()
         )
         require(circle.title.length >= 3 && circle.description.length >= 12 && circle.habitName.length >= 2) {
@@ -142,6 +149,33 @@ object CommunityRepository {
             )
             batch.update(db.collection("circles").document(circle.id), "memberCount", FieldValue.increment(1))
         }.await()
+    }
+
+    suspend fun updateCircleProfile(
+        circleId: String,
+        mission: String,
+        agenda: String,
+        meetingSchedule: String,
+        guidelines: String,
+        bannerStyle: String
+    ) {
+        val uid = FirebaseSync.ensureSignedIn()
+        val ref = db.collection("circles").document(circleId)
+        val existing = ref.get().await().toObject(HabitCircle::class.java)
+            ?: error("Community profile was not found.")
+        require(existing.ownerId == uid) { "Only the community leader can edit this profile." }
+        require(mission.trim().length >= 12 && agenda.trim().length >= 12) {
+            "Add a clear mission and agenda."
+        }
+        ref.update(
+            mapOf(
+                "mission" to mission.trim().take(300),
+                "agenda" to agenda.trim().take(500),
+                "meetingSchedule" to meetingSchedule.trim().take(100),
+                "guidelines" to guidelines.trim().take(500),
+                "bannerStyle" to bannerStyle.takeIf { it in setOf("sage", "sunrise", "ocean", "violet") }.orEmpty().ifBlank { "sage" }
+            )
+        ).await()
     }
 
     suspend fun members(circleId: String): List<CircleMember> =
