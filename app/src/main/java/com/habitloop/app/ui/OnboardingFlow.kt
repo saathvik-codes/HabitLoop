@@ -205,7 +205,7 @@ private fun WelcomeStep(onContinue: (name: String?) -> Unit, onSignIn: () -> Uni
             onClick = onSignIn,
             modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
         ) {
-            Text("Already use HabitLoop? Sign in")
+            Text("Sign in with Google, email or phone")
         }
         Text(
             "Your email and phone number are never used as your public community name.",

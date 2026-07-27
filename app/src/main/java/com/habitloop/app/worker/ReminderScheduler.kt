@@ -57,5 +57,18 @@ object ReminderScheduler {
         WorkManager.getInstance(context).cancelUniqueWork(plannerWorkName(taskId))
     }
 
+    fun scheduleHabitReminder(context: Context, habitId: Long, hour: Int, minute: Int) {
+        val now = LocalDateTime.now()
+        var target = now.toLocalDate().atTime(LocalTime.of(hour, minute))
+        if (!target.isAfter(now)) target = target.plusDays(1)
+        val request = PeriodicWorkRequestBuilder<HabitReminderWorker>(Duration.ofDays(1))
+            .setInitialDelay(Duration.between(now, target))
+            .setInputData(workDataOf(HabitReminderWorker.KEY_HABIT_ID to habitId)).build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork("habit_reminder_$habitId", ExistingPeriodicWorkPolicy.UPDATE, request)
+    }
+
+    fun cancelHabitReminder(context: Context, habitId: Long) =
+        WorkManager.getInstance(context).cancelUniqueWork("habit_reminder_$habitId")
+
     private fun plannerWorkName(taskId: Long) = "planner_reminder_$taskId"
 }

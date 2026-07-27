@@ -1,5 +1,6 @@
 package com.habitloop.app.ui
 
+import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -60,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,6 +73,7 @@ import com.habitloop.app.data.isScheduledOn
 import com.habitloop.app.data.isDueOn
 import com.habitloop.app.data.scheduleLabel
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
@@ -84,6 +87,7 @@ fun HabitDetailScreen(
     onWatchAdForFreeze: () -> Unit
 ) {
     val template = HabitTemplates.byId(habit.templateId)
+    val context = LocalContext.current
     val completions by viewModel.observeCompletions(habit.id)
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val completedDays = completions.associateBy { it.epochDay }
@@ -182,6 +186,28 @@ fun HabitDetailScreen(
                         )
                     }
                     TextButton(onClick = { scheduleSaved = false; editSchedule = true }) { Text("Edit") }
+                }
+            }
+        }
+        item {
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Schedule, null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text("Reminder", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Daily at ${LocalTime.of(habit.reminderHour, habit.reminderMinute).format(DateTimeFormatter.ofPattern("h:mm a"))}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    TextButton(onClick = {
+                        TimePickerDialog(context, { _, hour, minute -> viewModel.updateHabitReminder(habit.id, hour, minute) }, habit.reminderHour, habit.reminderMinute, false).show()
+                    }) { Text("Change") }
                 }
             }
         }

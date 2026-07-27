@@ -1,5 +1,6 @@
 package com.habitloop.app.ui
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,14 +23,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.habitloop.app.data.HabitTemplates
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 data class HabitDraft(
     val name: String,
     val templateId: String,
     val scheduleDaysCsv: String,
-    val motivation: String
+    val motivation: String,
+    val reminderHour: Int,
+    val reminderMinute: Int
 )
 
 @Composable
@@ -42,6 +48,8 @@ fun HabitSetupForm(
     var selectedTemplateId by remember { mutableStateOf(HabitTemplates.ALL.first().id) }
     var selectedDays by remember { mutableStateOf((1..7).toSet()) }
     var motivation by remember { mutableStateOf("") }
+    var reminderTime by remember { mutableStateOf(LocalTime.of(19, 0)) }
+    val context = LocalContext.current
     val validName = name.trim().length >= 3
 
     Column(modifier) {
@@ -62,6 +70,13 @@ fun HabitSetupForm(
             supportingText = { Text(if (name.isNotEmpty() && !validName) "Use at least 3 characters." else "${name.length}/48") },
             modifier = Modifier.fillMaxWidth()
         )
+        Text("Reminder time", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 14.dp))
+        Button(
+            onClick = {
+                TimePickerDialog(context, { _, hour, minute -> reminderTime = LocalTime.of(hour, minute) }, reminderTime.hour, reminderTime.minute, false).show()
+            },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        ) { Text("Notify me at ${reminderTime.format(DateTimeFormatter.ofPattern("h:mm a"))}") }
 
         Text("Choose a category", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 18.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
@@ -111,7 +126,9 @@ fun HabitSetupForm(
                         name = name.trim(),
                         templateId = selectedTemplateId,
                         scheduleDaysCsv = selectedDays.sorted().joinToString(","),
-                        motivation = motivation.trim()
+                        motivation = motivation.trim(),
+                        reminderHour = reminderTime.hour,
+                        reminderMinute = reminderTime.minute
                     )
                 )
             },

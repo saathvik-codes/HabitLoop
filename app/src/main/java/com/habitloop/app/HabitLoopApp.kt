@@ -36,6 +36,11 @@ class HabitLoopApp : Application() {
         NotificationInbox.initialize(this)
         HabitLoopMessagingService.createChannels(this)
         repository = HabitRepository(HabitDatabase.getInstance(this).habitDao())
+        appScope.launch {
+            repository.observeHabits().first()
+                .filter { !it.isArchived }
+                .forEach { ReminderScheduler.scheduleHabitReminder(this@HabitLoopApp, it.id, it.reminderHour, it.reminderMinute) }
+        }
         ReminderScheduler.scheduleDailyReminder(
             this,
             atHour = ReminderPrefs.getHour(this),

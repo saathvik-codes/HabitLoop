@@ -17,6 +17,9 @@ sealed class NavRoutes(val route: String) {
     data object Notifications : NavRoutes("notifications")
     data object Planner : NavRoutes("planner")
     data object AddPlannerTask : NavRoutes("planner/add")
+    data object EditPlannerTask : NavRoutes("planner/edit/{taskId}") {
+        fun buildRoute(taskId: Long) = "planner/edit/$taskId"
+    }
     data object CircleDetail : NavRoutes("circle/{circleId}") {
         fun buildRoute(circleId: String) = "circle/$circleId"
     }

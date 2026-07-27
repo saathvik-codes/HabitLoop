@@ -3,12 +3,14 @@ package com.habitloop.app.ui
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,15 +65,24 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ProfileAvatar(
-                    name = name,
-                    avatarStyle = UserPrefs.getAvatarSymbol(context),
-                    color = UserPrefs.getAvatarColor(context),
-                    photoUri = UserPrefs.getProfilePhotoUri(context),
-                    size = 72.dp
-                )
-                Column(Modifier.padding(start = 16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onEditProfile),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.size(72.dp)) {
+                    ProfileAvatar(
+                        name = name,
+                        avatarStyle = UserPrefs.getAvatarSymbol(context),
+                        color = UserPrefs.getAvatarColor(context),
+                        photoUri = UserPrefs.getProfilePhotoUri(context),
+                        size = 72.dp
+                    )
+                    IconButton(
+                        onClick = onEditProfile,
+                        modifier = Modifier.align(Alignment.BottomEnd).size(30.dp)
+                    ) { Icon(Icons.Filled.Edit, "Edit profile photo and avatar", modifier = Modifier.size(16.dp)) }
+                }
+                Column(Modifier.weight(1f).padding(start = 16.dp)) {
                     Text(name, style = MaterialTheme.typography.headlineMedium)
                     Text(
                         RewardWallet.activeTitle().ifBlank { "${habits.size} active routine${if (habits.size == 1) "" else "s"}" },
@@ -97,9 +109,6 @@ fun ProfileScreen(
                 "Practice focus, reflection and everyday mental skills",
                 onOpenGrowthLab
             )
-        }
-        item {
-            ProfileAction(Icons.Filled.Edit, "Customize profile", "Display name, avatar style and color", onEditProfile)
         }
         item {
             ProfileAction(

@@ -44,6 +44,11 @@ class HabitRepository(private val dao: HabitDao) {
         FirebaseSync.uidOrNull?.let { FirebaseSync.pushPlannerTask(it, updated) }
     }
 
+    suspend fun updatePlannerTask(task: PlannerTask) {
+        dao.updatePlannerTask(task)
+        FirebaseSync.uidOrNull?.let { FirebaseSync.pushPlannerTask(it, task) }
+    }
+
     suspend fun deletePlannerTask(taskId: Long) {
         dao.deletePlannerTask(taskId)
         FirebaseSync.uidOrNull?.let { FirebaseSync.deletePlannerTask(it, taskId) }
@@ -53,7 +58,9 @@ class HabitRepository(private val dao: HabitDao) {
         name: String,
         templateId: String,
         scheduleDaysCsv: String = "1,2,3,4,5,6,7",
-        motivation: String = ""
+        motivation: String = "",
+        reminderHour: Int = 19,
+        reminderMinute: Int = 0
     ): Long {
         val id = dao.insertHabit(
             Habit(
@@ -61,6 +68,8 @@ class HabitRepository(private val dao: HabitDao) {
                 templateId = templateId,
                 scheduleDaysCsv = scheduleDaysCsv,
                 motivation = motivation,
+                reminderHour = reminderHour,
+                reminderMinute = reminderMinute,
                 createdAtEpochDay = LocalDate.now().toEpochDay()
             )
         )
@@ -147,6 +156,13 @@ class HabitRepository(private val dao: HabitDao) {
         val days = scheduleDaysCsv.split(",").mapNotNull { it.toIntOrNull() }.filter { it in 1..7 }.distinct().sorted()
         require(days.isNotEmpty()) { "Choose at least one day." }
         val updated = habit.copy(scheduleDaysCsv = days.joinToString(","))
+        dao.updateHabit(updated)
+        FirebaseSync.uidOrNull?.let { FirebaseSync.pushHabit(it, updated) }
+    }
+
+    suspend fun updateHabitReminder(habitId: Long, hour: Int, minute: Int) {
+        val habit = dao.getHabit(habitId) ?: return
+        val updated = habit.copy(reminderHour = hour, reminderMinute = minute)
         dao.updateHabit(updated)
         FirebaseSync.uidOrNull?.let { FirebaseSync.pushHabit(it, updated) }
     }

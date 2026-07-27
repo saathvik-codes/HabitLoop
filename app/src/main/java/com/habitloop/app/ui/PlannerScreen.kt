@@ -16,9 +16,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Button
@@ -57,8 +57,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun PlannerScreen(
     viewModel: HabitViewModel,
-    onBack: () -> Unit,
-    onAddTask: () -> Unit
+    onAddTask: () -> Unit,
+    onEditTask: (Long) -> Unit
 ) {
     val tasks by viewModel.plannerTasks.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -81,16 +81,13 @@ fun PlannerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Back") }
-                    Column {
-                        Text("Planner", style = MaterialTheme.typography.headlineMedium)
-                        Text(
-                            "One-time plans, remembered at the right moment.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                Column {
+                    Text("Planner", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        "One-time plans, remembered at the right moment.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             if (tasks.isEmpty()) {
@@ -125,7 +122,8 @@ fun PlannerScreen(
                         onDelete = {
                             ReminderScheduler.cancelPlannerTask(context, task.id)
                             viewModel.deletePlannerTask(task.id)
-                        }
+                        },
+                        onEdit = { onEditTask(task.id) }
                     )
                 }
             }
@@ -140,7 +138,8 @@ fun PlannerScreen(
                                 ReminderScheduler.schedulePlannerTask(context, task.id, task.dueAtEpochMillis)
                             }
                         },
-                        onDelete = { viewModel.deletePlannerTask(task.id) }
+                        onDelete = { viewModel.deletePlannerTask(task.id) },
+                        onEdit = { onEditTask(task.id) }
                     )
                 }
             }
@@ -158,7 +157,7 @@ private fun PlannerSectionTitle(title: String, count: Int) {
 }
 
 @Composable
-private fun PlannerTaskCard(task: PlannerTask, onToggle: () -> Unit, onDelete: () -> Unit) {
+private fun PlannerTaskCard(task: PlannerTask, onToggle: () -> Unit, onDelete: () -> Unit, onEdit: () -> Unit) {
     val due = Instant.ofEpochMilli(task.dueAtEpochMillis).atZone(ZoneId.systemDefault()).toLocalDateTime()
     val overdue = !task.isCompleted && task.dueAtEpochMillis < System.currentTimeMillis()
     Card(
@@ -202,6 +201,7 @@ private fun PlannerTaskCard(task: PlannerTask, onToggle: () -> Unit, onDelete: (
                     )
                 }
             }
+            IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, "Edit reminder") }
             IconButton(onClick = onDelete) { Icon(Icons.Filled.DeleteOutline, "Delete reminder") }
         }
     }
@@ -210,13 +210,13 @@ private fun PlannerTaskCard(task: PlannerTask, onToggle: () -> Unit, onDelete: (
 @Composable
 fun AddPlannerTaskScreen(
     viewModel: HabitViewModel,
-    onBack: () -> Unit,
+    existingTask: PlannerTask? = null,
     onSaved: () -> Unit
 ) {
     val context = LocalContext.current
-    val initialDue = remember { LocalDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0) }
-    var title by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
+    val initialDue = remember(existingTask) { existingTask?.let { Instant.ofEpochMilli(it.dueAtEpochMillis).atZone(ZoneId.systemDefault()).toLocalDateTime() } ?: LocalDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0) }
+    var title by remember(existingTask) { mutableStateOf(existingTask?.title.orEmpty()) }
+    var note by remember(existingTask) { mutableStateOf(existingTask?.note.orEmpty()) }
     var dueDate by remember { mutableStateOf(initialDue.toLocalDate()) }
     var dueTime by remember { mutableStateOf(initialDue.toLocalTime()) }
     var attempted by remember { mutableStateOf(false) }
@@ -231,12 +231,9 @@ fun AddPlannerTaskScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Back") }
-                    Column {
-                        Text("New reminder", style = MaterialTheme.typography.headlineMedium)
-                        Text("Capture it now. HabitLoop will bring it back on time.", style = MaterialTheme.typography.bodyMedium)
-                    }
+                Column {
+                    Text(if (existingTask == null) "New reminder" else "Edit reminder", style = MaterialTheme.typography.headlineMedium)
+                    Text("Capture it now. HabitLoop will bring it back on time.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
             item {
@@ -303,15 +300,22 @@ fun AddPlannerTaskScreen(
                             permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                         }
                         val dueMillis = due.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                        viewModel.addPlannerTask(title, note, dueMillis) { taskId ->
-                            ReminderScheduler.schedulePlannerTask(context, taskId, dueMillis)
+                        if (existingTask == null) {
+                            viewModel.addPlannerTask(title, note, dueMillis) { taskId ->
+                                ReminderScheduler.schedulePlannerTask(context, taskId, dueMillis)
+                                onSaved()
+                            }
+                        } else {
+                            val updated = existingTask.copy(title = title.trim(), note = note.trim(), dueAtEpochMillis = dueMillis)
+                            viewModel.updatePlannerTask(updated)
+                            if (!updated.isCompleted) ReminderScheduler.schedulePlannerTask(context, updated.id, dueMillis)
                             onSaved()
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Filled.NotificationsActive, null, Modifier.padding(end = 8.dp))
-                    Text("Save and remind me")
+                    Text(if (existingTask == null) "Save and remind me" else "Save changes")
                 }
             }
         }

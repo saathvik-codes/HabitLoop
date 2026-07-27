@@ -121,7 +121,7 @@ fun HabitsScreen(viewModel: HabitViewModel, onOpenHabit: (Long) -> Unit) {
         AddHabitDialog(
             onDismiss = { showAddDialog = false },
             onHabitCreated = {
-                viewModel.addHabit(it.name, it.templateId, it.scheduleDaysCsv, it.motivation)
+                viewModel.addHabit(it.name, it.templateId, it.scheduleDaysCsv, it.motivation, it.reminderHour, it.reminderMinute)
                 showAddDialog = false
             }
         )

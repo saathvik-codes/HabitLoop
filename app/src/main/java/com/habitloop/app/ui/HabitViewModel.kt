@@ -1,6 +1,8 @@
 package com.habitloop.app.ui
 
 import androidx.lifecycle.ViewModel
+import android.content.Context
+import com.habitloop.app.worker.ReminderScheduler
 import androidx.lifecycle.viewModelScope
 import com.habitloop.app.data.HabitCompletion
 import com.habitloop.app.data.HabitRepository
@@ -10,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
+class HabitViewModel(private val repository: HabitRepository, private val appContext: Context) : ViewModel() {
 
     val habits = repository.observeHabits()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -22,10 +24,13 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
         name: String,
         templateId: String,
         scheduleDaysCsv: String = "1,2,3,4,5,6,7",
-        motivation: String = ""
+        motivation: String = "",
+        reminderHour: Int = 19,
+        reminderMinute: Int = 0
     ) {
         viewModelScope.launch {
-            repository.createHabit(name, templateId, scheduleDaysCsv, motivation)
+            val id = repository.createHabit(name, templateId, scheduleDaysCsv, motivation, reminderHour, reminderMinute)
+            ReminderScheduler.scheduleHabitReminder(appContext, id, reminderHour, reminderMinute)
         }
     }
 
@@ -53,6 +58,13 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
         viewModelScope.launch { repository.setArchived(habitId, archived) }
     }
 
+    fun updateHabitReminder(habitId: Long, hour: Int, minute: Int) {
+        viewModelScope.launch {
+            repository.updateHabitReminder(habitId, hour, minute)
+            ReminderScheduler.scheduleHabitReminder(appContext, habitId, hour, minute)
+        }
+    }
+
     fun addPlannerTask(title: String, note: String, dueAtEpochMillis: Long, onCreated: (Long) -> Unit) {
         viewModelScope.launch {
             onCreated(repository.createPlannerTask(title, note, dueAtEpochMillis))
@@ -65,6 +77,10 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
 
     fun deletePlannerTask(taskId: Long) {
         viewModelScope.launch { repository.deletePlannerTask(taskId) }
+    }
+
+    fun updatePlannerTask(task: com.habitloop.app.data.PlannerTask) {
+        viewModelScope.launch { repository.updatePlannerTask(task) }
     }
 
     fun observeCompletions(habitId: Long): Flow<List<HabitCompletion>> =

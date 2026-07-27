@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             HabitLoopTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    val viewModel = HabitViewModel(repository)
+                    val viewModel = HabitViewModel(repository, applicationContext)
                     val navController = rememberNavController()
                     var showLaunch by rememberSaveable { mutableStateOf(true) }
                     val startDestination =
@@ -190,7 +190,9 @@ fun AppRoot(
                             name = habit.name,
                             templateId = habit.templateId,
                             scheduleDaysCsv = habit.scheduleDaysCsv,
-                            motivation = habit.motivation
+                            motivation = habit.motivation,
+                            reminderHour = habit.reminderHour,
+                            reminderMinute = habit.reminderMinute
                         )
                         OnboardingPrefs.markOnboarded(activity)
                         navController.navigate(NavRoutes.Today.route) {
@@ -219,17 +221,23 @@ fun AppRoot(
             composable(NavRoutes.Planner.route) {
                 PlannerScreen(
                     viewModel = viewModel,
-                    onBack = { navController.popBackStack() },
-                    onAddTask = { navController.navigate(NavRoutes.AddPlannerTask.route) }
+                    onAddTask = { navController.navigate(NavRoutes.AddPlannerTask.route) },
+                    onEditTask = { navController.navigate(NavRoutes.EditPlannerTask.buildRoute(it)) }
                 )
             }
 
             composable(NavRoutes.AddPlannerTask.route) {
                 AddPlannerTaskScreen(
                     viewModel = viewModel,
-                    onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
                 )
+            }
+            composable(NavRoutes.EditPlannerTask.route) { entry ->
+                val taskId = entry.arguments?.getString("taskId")?.toLongOrNull()
+                val tasks by viewModel.plannerTasks.collectAsStateWithLifecycle()
+                tasks.firstOrNull { it.id == taskId }?.let { task ->
+                    AddPlannerTaskScreen(viewModel = viewModel, existingTask = task, onSaved = { navController.popBackStack() })
+                }
             }
 
             composable(NavRoutes.Settings.route) {

@@ -3,6 +3,11 @@ package com.habitloop.app.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -130,6 +136,7 @@ fun TodayScreen(
         insight = if (habits.size >= 2) HabitInsights.bestCorrelation(habits, viewModel.allCompletions()) else null
     }
 
+    Box(Modifier.fillMaxSize()) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + slideInVertically { it / 12 }
@@ -137,7 +144,7 @@ fun TodayScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 20.dp, top = 18.dp, end = 20.dp, bottom = 28.dp
+                start = 20.dp, top = 18.dp, end = 20.dp, bottom = 104.dp
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -149,16 +156,6 @@ fun TodayScreen(
                     onOpenSettings = onOpenSettings
                 )
             }
-            item {
-                HomeShortcut(
-                    Modifier.fillMaxWidth(),
-                    Icons.Filled.EventNote,
-                    "Plan something",
-                    "Add a one-time reminder",
-                    onOpenPlanner
-                )
-            }
-
             if (habits.isEmpty()) {
                 item { EmptyTodayState() }
             } else if (scheduledToday.isEmpty()) {
@@ -221,6 +218,44 @@ fun TodayScreen(
                     item { InsightCard(value, habits) }
                 }
             }
+        }
+        }
+        PlannerQuickAction(
+            onClick = onOpenPlanner,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 18.dp)
+        )
+    }
+}
+
+@Composable
+private fun PlannerQuickAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "planner nudge")
+    val scale by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "planner icon scale"
+    )
+    Surface(
+        onClick = onClick,
+        modifier = modifier.size(54.dp).graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        },
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shadowElevation = 3.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                Icons.Filled.EventNote,
+                contentDescription = "Open planner and reminders",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(26.dp)
+            )
         }
     }
 }
