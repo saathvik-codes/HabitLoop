@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.Card
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -81,7 +82,8 @@ fun TodayScreen(
     onOpenSettings: () -> Unit,
     onOpenNotifications: () -> Unit,
     onOpenGrowthLab: () -> Unit,
-    onOpenCommunity: () -> Unit
+    onOpenCommunity: () -> Unit,
+    onOpenPlanner: () -> Unit
 ) {
     val habits by viewModel.habits.collectAsStateWithLifecycle(initialValue = emptyList())
     val inboxItems by NotificationInbox.items.collectAsStateWithLifecycle()
@@ -145,6 +147,15 @@ fun TodayScreen(
                     unreadCount = unreadCount,
                     onOpenNotifications = onOpenNotifications,
                     onOpenSettings = onOpenSettings
+                )
+            }
+            item {
+                HomeShortcut(
+                    Modifier.fillMaxWidth(),
+                    Icons.Filled.EventNote,
+                    "Plan something",
+                    "Add a one-time reminder",
+                    onOpenPlanner
                 )
             }
 

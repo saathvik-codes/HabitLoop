@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Habit::class, HabitCompletion::class],
-    version = 3,
+    entities = [Habit::class, HabitCompletion::class, PlannerTask::class],
+    version = 4,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -24,7 +24,7 @@ abstract class HabitDatabase : RoomDatabase() {
                     context.applicationContext,
                     HabitDatabase::class.java,
                     "habitloop.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { INSTANCE = it }
             }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -38,6 +38,23 @@ abstract class HabitDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE habits ADD COLUMN pausedUntilEpochDay INTEGER DEFAULT NULL")
                 db.execSQL("ALTER TABLE habits ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS planner_tasks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        note TEXT NOT NULL,
+                        dueAtEpochMillis INTEGER NOT NULL,
+                        isCompleted INTEGER NOT NULL,
+                        createdAtEpochMillis INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
             }
         }
     }

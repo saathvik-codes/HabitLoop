@@ -71,6 +71,18 @@ object FirebaseSync {
             .set(completion)
     }
 
+    fun pushPlannerTask(uid: String, task: PlannerTask) {
+        db.collection("users").document(uid)
+            .collection("plannerTasks").document(task.id.toString())
+            .set(task)
+    }
+
+    fun deletePlannerTask(uid: String, taskId: Long) {
+        db.collection("users").document(uid)
+            .collection("plannerTasks").document(taskId.toString())
+            .delete()
+    }
+
     fun pushProfile(displayName: String, avatarStyle: String = "", avatarColor: Long? = null) {
         val uid = auth.currentUser?.uid ?: return
         val profile = mutableMapOf<String, Any>(
@@ -93,5 +105,10 @@ object FirebaseSync {
             .collection("habits").document(habitId.toString())
             .collection("completions").get().await()
         return snapshot.documents.mapNotNull { it.toObject(HabitCompletion::class.java) }
+    }
+
+    suspend fun pullPlannerTasks(uid: String): List<PlannerTask> {
+        val snapshot = db.collection("users").document(uid).collection("plannerTasks").get().await()
+        return snapshot.documents.mapNotNull { it.toObject(PlannerTask::class.java) }
     }
 }

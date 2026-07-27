@@ -15,6 +15,9 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
     val habits = repository.observeHabits()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val plannerTasks = repository.observePlannerTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun addHabit(
         name: String,
         templateId: String,
@@ -48,6 +51,20 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
 
     fun setArchived(habitId: Long, archived: Boolean) {
         viewModelScope.launch { repository.setArchived(habitId, archived) }
+    }
+
+    fun addPlannerTask(title: String, note: String, dueAtEpochMillis: Long, onCreated: (Long) -> Unit) {
+        viewModelScope.launch {
+            onCreated(repository.createPlannerTask(title, note, dueAtEpochMillis))
+        }
+    }
+
+    fun setPlannerTaskCompleted(taskId: Long, completed: Boolean) {
+        viewModelScope.launch { repository.setPlannerTaskCompleted(taskId, completed) }
+    }
+
+    fun deletePlannerTask(taskId: Long) {
+        viewModelScope.launch { repository.deletePlannerTask(taskId) }
     }
 
     fun observeCompletions(habitId: Long): Flow<List<HabitCompletion>> =

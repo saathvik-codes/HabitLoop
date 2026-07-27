@@ -6,6 +6,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.workDataOf
+import androidx.work.ExistingWorkPolicy
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -38,4 +39,23 @@ object ReminderScheduler {
                 .build()
         )
     }
+
+    fun schedulePlannerTask(context: Context, taskId: Long, dueAtEpochMillis: Long) {
+        val delay = (dueAtEpochMillis - System.currentTimeMillis()).coerceAtLeast(0)
+        val request = OneTimeWorkRequestBuilder<PlannerReminderWorker>()
+            .setInitialDelay(java.time.Duration.ofMillis(delay))
+            .setInputData(workDataOf(PlannerReminderWorker.KEY_TASK_ID to taskId))
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            plannerWorkName(taskId),
+            ExistingWorkPolicy.REPLACE,
+            request
+        )
+    }
+
+    fun cancelPlannerTask(context: Context, taskId: Long) {
+        WorkManager.getInstance(context).cancelUniqueWork(plannerWorkName(taskId))
+    }
+
+    private fun plannerWorkName(taskId: Long) = "planner_reminder_$taskId"
 }

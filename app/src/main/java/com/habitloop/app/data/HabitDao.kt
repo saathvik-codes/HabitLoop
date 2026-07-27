@@ -35,4 +35,19 @@ interface HabitDao {
 
     @Query("SELECT * FROM habit_completions")
     suspend fun getAllCompletions(): List<HabitCompletion>
+
+    @Query("SELECT * FROM planner_tasks ORDER BY isCompleted ASC, dueAtEpochMillis ASC")
+    fun observePlannerTasks(): Flow<List<PlannerTask>>
+
+    @Query("SELECT * FROM planner_tasks WHERE id = :taskId")
+    suspend fun getPlannerTask(taskId: Long): PlannerTask?
+
+    @Insert
+    suspend fun insertPlannerTask(task: PlannerTask): Long
+
+    @Update
+    suspend fun updatePlannerTask(task: PlannerTask)
+
+    @Query("DELETE FROM planner_tasks WHERE id = :taskId")
+    suspend fun deletePlannerTask(taskId: Long)
 }

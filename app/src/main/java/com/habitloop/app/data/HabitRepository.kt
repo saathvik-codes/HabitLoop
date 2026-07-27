@@ -21,6 +21,34 @@ class HabitRepository(private val dao: HabitDao) {
     fun observeCompletions(habitId: Long): Flow<List<HabitCompletion>> =
         dao.observeCompletions(habitId)
 
+    fun observePlannerTasks(): Flow<List<PlannerTask>> = dao.observePlannerTasks()
+
+    suspend fun createPlannerTask(title: String, note: String, dueAtEpochMillis: Long): Long {
+        val id = dao.insertPlannerTask(
+            PlannerTask(
+                title = title.trim(),
+                note = note.trim(),
+                dueAtEpochMillis = dueAtEpochMillis
+            )
+        )
+        dao.getPlannerTask(id)?.let { task ->
+            FirebaseSync.uidOrNull?.let { FirebaseSync.pushPlannerTask(it, task) }
+        }
+        return id
+    }
+
+    suspend fun setPlannerTaskCompleted(taskId: Long, completed: Boolean) {
+        val task = dao.getPlannerTask(taskId) ?: return
+        val updated = task.copy(isCompleted = completed)
+        dao.updatePlannerTask(updated)
+        FirebaseSync.uidOrNull?.let { FirebaseSync.pushPlannerTask(it, updated) }
+    }
+
+    suspend fun deletePlannerTask(taskId: Long) {
+        dao.deletePlannerTask(taskId)
+        FirebaseSync.uidOrNull?.let { FirebaseSync.deletePlannerTask(it, taskId) }
+    }
+
     suspend fun createHabit(
         name: String,
         templateId: String,
@@ -144,12 +172,16 @@ class HabitRepository(private val dao: HabitDao) {
      * was fully wiped), get your streaks back instead of starting at zero.
      */
     suspend fun restoreFromCloudIfEmpty(uid: String) {
-        if (observeHabits().first().isNotEmpty()) return
-        val cloudHabits = FirebaseSync.pullAllHabits(uid)
-        for (habit in cloudHabits) {
-            dao.insertHabit(habit)
-            val completions = FirebaseSync.pullCompletions(uid, habit.id)
-            completions.forEach { dao.insertCompletion(it) }
+        if (observeHabits().first().isEmpty()) {
+            val cloudHabits = FirebaseSync.pullAllHabits(uid)
+            for (habit in cloudHabits) {
+                dao.insertHabit(habit)
+                val completions = FirebaseSync.pullCompletions(uid, habit.id)
+                completions.forEach { dao.insertCompletion(it) }
+            }
+        }
+        if (observePlannerTasks().first().isEmpty()) {
+            FirebaseSync.pullPlannerTasks(uid).forEach { dao.insertPlannerTask(it) }
         }
     }
 

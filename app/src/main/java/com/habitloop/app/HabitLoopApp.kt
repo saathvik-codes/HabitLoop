@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 class HabitLoopApp : Application() {
 
@@ -53,6 +54,9 @@ class HabitLoopApp : Application() {
                 runCatching {
                     val uid = FirebaseSync.ensureSignedIn()
                     repository.restoreFromCloudIfEmpty(uid)
+                    repository.observePlannerTasks().first()
+                        .filter { !it.isCompleted && it.dueAtEpochMillis > System.currentTimeMillis() }
+                        .forEach { ReminderScheduler.schedulePlannerTask(this@HabitLoopApp, it.id, it.dueAtEpochMillis) }
                 }
             }
             FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->

@@ -70,6 +70,8 @@ import com.habitloop.app.ui.CircleCheckInContent
 import com.habitloop.app.ui.CircleMembersContent
 import com.habitloop.app.ui.CircleBoardContent
 import com.habitloop.app.ui.CreateCircleScreen
+import com.habitloop.app.ui.PlannerScreen
+import com.habitloop.app.ui.AddPlannerTaskScreen
 import com.habitloop.app.ui.theme.HabitLoopTheme
 import com.habitloop.app.audio.ThemeMusicController
 import com.habitloop.app.audio.ThemeMusicPrefs
@@ -159,6 +161,7 @@ fun AppRoot(
                 when (notificationCategory) {
                     "circle_message" -> NavRoutes.Community.route
                     "jam" -> NavRoutes.GrowthLab.route
+                    "planner" -> NavRoutes.Planner.route
                     else -> NavRoutes.Today.route
                 }
             ) { launchSingleTop = true }
@@ -208,7 +211,24 @@ fun AppRoot(
                     onOpenSettings = { navController.navigate(NavRoutes.Settings.route) },
                     onOpenNotifications = { navController.navigate(NavRoutes.Notifications.route) },
                     onOpenGrowthLab = { navController.navigate(NavRoutes.GrowthLab.route) },
-                    onOpenCommunity = { navController.navigate(NavRoutes.Community.route) }
+                    onOpenCommunity = { navController.navigate(NavRoutes.Community.route) },
+                    onOpenPlanner = { navController.navigate(NavRoutes.Planner.route) }
+                )
+            }
+
+            composable(NavRoutes.Planner.route) {
+                PlannerScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onAddTask = { navController.navigate(NavRoutes.AddPlannerTask.route) }
+                )
+            }
+
+            composable(NavRoutes.AddPlannerTask.route) {
+                AddPlannerTaskScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
                 )
             }
 
@@ -295,6 +315,7 @@ fun AppRoot(
                             when (category) {
                                 "circle_message" -> NavRoutes.Community.route
                                 "jam" -> NavRoutes.GrowthLab.route
+                                "planner" -> NavRoutes.Planner.route
                                 else -> NavRoutes.Today.route
                             }
                         )
