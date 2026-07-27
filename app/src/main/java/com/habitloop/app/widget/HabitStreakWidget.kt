@@ -24,6 +24,8 @@ import androidx.glance.unit.ColorProvider
 import com.habitloop.app.MainActivity
 import com.habitloop.app.data.HabitDatabase
 import com.habitloop.app.data.HabitTemplates
+import com.habitloop.app.data.isDueOn
+import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 
 /**
@@ -37,7 +39,7 @@ class HabitStreakWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: android.content.Context, id: GlanceId) {
         val dao = HabitDatabase.getInstance(context).habitDao()
-        val habits = dao.observeHabits().first()
+        val habits = dao.observeHabits().first().filter { it.isDueOn(LocalDate.now()) }
 
         provideContent {
             Column(

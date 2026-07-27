@@ -123,6 +123,20 @@ class HabitRepository(private val dao: HabitDao) {
         FirebaseSync.uidOrNull?.let { FirebaseSync.pushHabit(it, updated) }
     }
 
+    suspend fun pauseHabit(habitId: Long, untilEpochDay: Long?) {
+        val habit = dao.getHabit(habitId) ?: return
+        val updated = habit.copy(pausedUntilEpochDay = untilEpochDay, isArchived = false)
+        dao.updateHabit(updated)
+        FirebaseSync.uidOrNull?.let { FirebaseSync.pushHabit(it, updated) }
+    }
+
+    suspend fun setArchived(habitId: Long, archived: Boolean) {
+        val habit = dao.getHabit(habitId) ?: return
+        val updated = habit.copy(isArchived = archived, pausedUntilEpochDay = null)
+        dao.updateHabit(updated)
+        FirebaseSync.uidOrNull?.let { FirebaseSync.pushHabit(it, updated) }
+    }
+
     /**
      * Restores habits + their completions from Firestore if the local DB is
      * empty — the actual value cloud sync provides: reinstall the app, sign

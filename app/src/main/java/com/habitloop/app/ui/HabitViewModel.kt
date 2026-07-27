@@ -42,6 +42,14 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
         viewModelScope.launch { repository.updateSchedule(habitId, scheduleDaysCsv) }
     }
 
+    fun pauseHabit(habitId: Long, untilEpochDay: Long?) {
+        viewModelScope.launch { repository.pauseHabit(habitId, untilEpochDay) }
+    }
+
+    fun setArchived(habitId: Long, archived: Boolean) {
+        viewModelScope.launch { repository.setArchived(habitId, archived) }
+    }
+
     fun observeCompletions(habitId: Long): Flow<List<HabitCompletion>> =
         repository.observeCompletions(habitId)
 

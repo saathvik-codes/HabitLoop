@@ -21,12 +21,19 @@ data class Habit(
     val reminderMinute: Int = 0,
     val createdAtEpochDay: Long = 0,
     val scheduleDaysCsv: String = "1,2,3,4,5,6,7",
-    val motivation: String = ""
+    val motivation: String = "",
+    val pausedUntilEpochDay: Long? = null,
+    val isArchived: Boolean = false
 )
 
 fun Habit.isScheduledOn(date: java.time.LocalDate): Boolean =
     scheduleDaysCsv.split(",").mapNotNull { it.toIntOrNull() }
         .contains(date.dayOfWeek.value)
+
+fun Habit.isDueOn(date: java.time.LocalDate): Boolean =
+    !isArchived &&
+        (pausedUntilEpochDay == null || date.toEpochDay() > pausedUntilEpochDay) &&
+        isScheduledOn(date)
 
 fun Habit.scheduleLabel(): String {
     val days = scheduleDaysCsv.split(",").mapNotNull { it.toIntOrNull() }.toSet()

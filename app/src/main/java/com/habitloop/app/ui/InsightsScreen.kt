@@ -50,7 +50,8 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun InsightsScreen(viewModel: HabitViewModel, onOpenHabit: (Long) -> Unit) {
-    val habits by viewModel.habits.collectAsStateWithLifecycle()
+    val allHabits by viewModel.habits.collectAsStateWithLifecycle()
+    val habits = allHabits.filterNot { it.isArchived }
     var completions by remember { mutableStateOf<List<HabitCompletion>>(emptyList()) }
     LaunchedEffect(habits) { completions = viewModel.allCompletions() }
 

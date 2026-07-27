@@ -15,7 +15,7 @@ import com.habitloop.app.data.Habit
 import com.habitloop.app.data.HabitDatabase
 import com.habitloop.app.data.NotificationPrefs
 import com.habitloop.app.data.NotificationInbox
-import com.habitloop.app.data.isScheduledOn
+import com.habitloop.app.data.isDueOn
 import kotlinx.coroutines.flow.first
 
 class ReminderWorker(
@@ -33,7 +33,7 @@ class ReminderWorker(
         if (!NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) return Result.success()
         val date = java.time.LocalDate.now()
         val incomplete = HabitDatabase.getInstance(applicationContext).habitDao().observeHabits().first()
-            .filter { it.isScheduledOn(date) && it.lastCompletedEpochDay != date.toEpochDay() }
+            .filter { it.isDueOn(date) && it.lastCompletedEpochDay != date.toEpochDay() }
         if (incomplete.isNotEmpty()) notify(incomplete)
         return Result.success()
     }

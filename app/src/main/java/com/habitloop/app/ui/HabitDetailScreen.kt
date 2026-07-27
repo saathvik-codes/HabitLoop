@@ -26,12 +26,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
@@ -65,6 +68,7 @@ import com.habitloop.app.data.HabitCompletion
 import com.habitloop.app.data.HabitInsights
 import com.habitloop.app.data.HabitTemplates
 import com.habitloop.app.data.isScheduledOn
+import com.habitloop.app.data.isDueOn
 import com.habitloop.app.data.scheduleLabel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -85,12 +89,14 @@ fun HabitDetailScreen(
     val completedDays = completions.associateBy { it.epochDay }
     val today = LocalDate.now()
     val isDoneToday = habit.lastCompletedEpochDay == today.toEpochDay()
-    val isScheduledToday = habit.isScheduledOn(today)
+    val isScheduledToday = habit.isDueOn(today)
     var selectedMonth by remember { mutableStateOf(YearMonth.now()) }
     var monthDirection by remember { mutableIntStateOf(0) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var editSchedule by remember { mutableStateOf(false) }
     var scheduleSaved by remember { mutableStateOf(false) }
+    var showPauseOptions by remember { mutableStateOf(false) }
+    var confirmArchive by remember { mutableStateOf(false) }
 
     if (editSchedule) {
         ScheduleEditorDialog(
@@ -101,6 +107,48 @@ fun HabitDetailScreen(
                 scheduleSaved = true
                 editSchedule = false
             }
+        )
+    }
+
+    if (showPauseOptions) {
+        AlertDialog(
+            onDismissRequest = { showPauseOptions = false },
+            title = { Text("Pause without losing progress") },
+            text = {
+                Column {
+                    Text("Paused days do not appear on Today and do not count as missed.")
+                    TextButton(onClick = {
+                        viewModel.pauseHabit(habit.id, today.plusDays(1).toEpochDay())
+                        showPauseOptions = false
+                    }) { Text("Pause for 1 day") }
+                    TextButton(onClick = {
+                        viewModel.pauseHabit(habit.id, today.plusDays(7).toEpochDay())
+                        showPauseOptions = false
+                    }) { Text("Pause for 1 week") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showPauseOptions = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (confirmArchive) {
+        AlertDialog(
+            onDismissRequest = { confirmArchive = false },
+            title = { Text(if (habit.isArchived) "Restore this habit?" else "Archive this habit?") },
+            text = {
+                Text(
+                    if (habit.isArchived) "It will return to your active habits."
+                    else "It will leave Today, but its streak and check-in history stay safe."
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.setArchived(habit.id, !habit.isArchived)
+                    confirmArchive = false
+                }) { Text(if (habit.isArchived) "Restore" else "Archive") }
+            },
+            dismissButton = { TextButton(onClick = { confirmArchive = false }) { Text("Cancel") } }
         )
     }
 
@@ -134,6 +182,36 @@ fun HabitDetailScreen(
                         )
                     }
                     TextButton(onClick = { scheduleSaved = false; editSchedule = true }) { Text("Edit") }
+                }
+            }
+        }
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        if (habit.pausedUntilEpochDay != null &&
+                            habit.pausedUntilEpochDay >= today.toEpochDay()
+                        ) viewModel.pauseHabit(habit.id, null) else showPauseOptions = true
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !habit.isArchived
+                ) {
+                    Icon(
+                        if (habit.pausedUntilEpochDay != null) Icons.Filled.PlayCircle else Icons.Filled.PauseCircle,
+                        null,
+                        Modifier.padding(end = 6.dp)
+                    )
+                    Text(if (habit.pausedUntilEpochDay != null) "Resume" else "Pause")
+                }
+                OutlinedButton(
+                    onClick = { confirmArchive = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Filled.Archive, null, Modifier.padding(end = 6.dp))
+                    Text(if (habit.isArchived) "Restore" else "Archive")
                 }
             }
         }

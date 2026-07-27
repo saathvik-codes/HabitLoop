@@ -69,7 +69,7 @@ import com.habitloop.app.data.HabitInsights
 import com.habitloop.app.data.HabitTemplates
 import com.habitloop.app.data.UserPrefs
 import com.habitloop.app.data.NotificationInbox
-import com.habitloop.app.data.isScheduledOn
+import com.habitloop.app.data.isDueOn
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -89,7 +89,7 @@ fun TodayScreen(
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val today = LocalDate.now().toEpochDay()
-    val scheduledToday = habits.filter { it.isScheduledOn(LocalDate.now()) }
+    val scheduledToday = habits.filter { it.isDueOn(LocalDate.now()) }
     val done = scheduledToday.filter { it.lastCompletedEpochDay == today }
     val remaining = scheduledToday.filterNot { it.lastCompletedEpochDay == today }
     val completion = if (scheduledToday.isEmpty()) 0f else done.size.toFloat() / scheduledToday.size
